@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
 import { mockCategorias, mockEdificios } from '../../data/mockData';
+import Breadcrumbs from '../../components/Breadcrumbs';
 
 /**
  * Componente Dashboard
@@ -279,6 +280,8 @@ export default function Dashboard() {
           </Button>
         </Box>
       </Paper>
+
+      <Breadcrumbs />
 
       <Typography variant="h4" sx={{ color: '#002f6c', fontWeight: 'bold', mb: 4 }}>
         Dashboard de Administración

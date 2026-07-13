@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import {
   Paper,
@@ -26,11 +26,15 @@ import {
   Divider,
   Snackbar,
   Alert,
+  TablePagination,
+  Fade,
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
 import { calcularTiempoRestante, formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
 import { mockCategorias, mockSubcategorias, mockUbicaciones, mockEdificios } from '../../data/mockData';
 import type { Ticket } from '../../types';
+import Breadcrumbs from '../../components/Breadcrumbs';
+import { LoadingSpinner } from '../../components/atoms';
 
 /**
  * Componente ColaTickets
@@ -57,6 +61,11 @@ export default function ColaTickets() {
   const [comentario, setComentario] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Estados para paginación
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Estados para edición de categoría
   const [editandoCategoria, setEditandoCategoria] = useState(false);
@@ -98,6 +107,32 @@ export default function ColaTickets() {
       return new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime();
     });
   }, [tickets, filtroEstado]);
+
+  // Aplicar paginación
+  const paginatedTickets = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return ticketsFiltrados.slice(startIndex, endIndex);
+  }, [ticketsFiltrados, page, rowsPerPage]);
+
+  // Manejadores de paginación
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Simular carga inicial
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const getPriorityColor = useCallback((prioridad: string) => {
     switch (prioridad) {
@@ -283,7 +318,18 @@ export default function ColaTickets() {
             </Box>
           </Box>
 
-          {/* Vista móvil: Cards */}
+          <Breadcrumbs />
+
+          {isLoading ? (
+            <Fade in={isLoading} timeout={500}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <LoadingSpinner message="Cargando tickets..." />
+              </Box>
+            </Fade>
+          ) : (
+            <Fade in={!isLoading} timeout={500}>
+              <Box>
+            {/* Vista móvil: Cards */}
           {isMobile ? (
             <Box sx={{ p: 2 }}>
               {ticketsFiltrados.length === 0 ? (
@@ -400,7 +446,7 @@ export default function ColaTickets() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    ticketsFiltrados.map((ticket) => (
+                    paginatedTickets.map((ticket) => (
                       <TableRow key={ticket.id} hover onClick={() => handleRowClick(ticket)} sx={{ cursor: 'pointer' }}>
                         <TableCell sx={{ fontWeight: 'bold', color: '#002f6c', fontFamily: 'monospace' }}>
                           {ticket.id}
@@ -474,12 +520,31 @@ export default function ColaTickets() {
                   )}
                 </TableBody>
               </Table>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={ticketsFiltrados.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Filas por página:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                sx={{
+                  borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+                }}
+              />
             </TableContainer>
+          )}
+              </Box>
+            </Fade>
           )}
         </Box>
 
         {/* Modal de detalle del ticket */}
         <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
+          <Fade in={modalOpen} timeout={300}>
+            <Box>
           <DialogTitle sx={{ bgcolor: '#002f6c', color: 'white' }}>
             Detalle del Ticket {ticketSeleccionado?.id}
           </DialogTitle>
@@ -684,6 +749,8 @@ export default function ColaTickets() {
               </Button>
             )}
           </DialogActions>
+            </Box>
+          </Fade>
         </Dialog>
 
         <Snackbar

@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
 import { mockCategorias, mockSubcategorias, mockUbicaciones, mockEdificios } from '../../data/mockData';
+import { validatePhone, validateDescription, validateEquipmentCount, validateField } from '../../utils/validation';
 
 /**
  * Componente CrearTicket
@@ -73,20 +74,33 @@ export default function CrearTicket() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.categoria) newErrors.categoria = 'Debe seleccionar una categoría';
-    if (!formData.subcategoria) newErrors.subcategoria = 'Debe seleccionar una subcategoría';
-    if (!formData.edificio) newErrors.edificio = 'Debe seleccionar un edificio';
-    if (!formData.ubicacion) newErrors.ubicacion = 'Debe seleccionar una ubicación';
-    if (!formData.cantidadEquipos) newErrors.cantidadEquipos = 'Debe ingresar la cantidad de equipos';
-    else {
-      const cantidadNum = Number(formData.cantidadEquipos);
-      if (isNaN(cantidadNum) || cantidadNum < 1 || cantidadNum > 99)
-        newErrors.cantidadEquipos = 'Debe ingresar un número entre 1 y 99';
-    }
-    if (!formData.telefonoContacto) newErrors.telefonoContacto = 'Debe ingresar un teléfono de contacto';
-    if (!formData.descripcion) newErrors.descripcion = 'Debe ingresar una descripción';
-    else if (formData.descripcion.length < 10)
-      newErrors.descripcion = 'La descripción debe tener al menos 10 caracteres';
+    // Validar categoría
+    const categoriaResult = validateField(formData.categoria, { required: true });
+    if (!categoriaResult.isValid) newErrors.categoria = categoriaResult.error || 'Debe seleccionar una categoría';
+
+    // Validar subcategoría
+    const subcategoriaResult = validateField(formData.subcategoria, { required: true });
+    if (!subcategoriaResult.isValid) newErrors.subcategoria = subcategoriaResult.error || 'Debe seleccionar una subcategoría';
+
+    // Validar edificio
+    const edificioResult = validateField(formData.edificio, { required: true });
+    if (!edificioResult.isValid) newErrors.edificio = edificioResult.error || 'Debe seleccionar un edificio';
+
+    // Validar ubicación
+    const ubicacionResult = validateField(formData.ubicacion, { required: true });
+    if (!ubicacionResult.isValid) newErrors.ubicacion = ubicacionResult.error || 'Debe seleccionar una ubicación';
+
+    // Validar cantidad de equipos
+    const cantidadResult = validateEquipmentCount(formData.cantidadEquipos);
+    if (!cantidadResult.isValid) newErrors.cantidadEquipos = cantidadResult.error || 'Error en validación';
+
+    // Validar teléfono
+    const telefonoResult = validatePhone(formData.telefonoContacto);
+    if (!telefonoResult.isValid) newErrors.telefonoContacto = telefonoResult.error || 'Error en validación';
+
+    // Validar descripción
+    const descripcionResult = validateDescription(formData.descripcion);
+    if (!descripcionResult.isValid) newErrors.descripcion = descripcionResult.error || 'Error en validación';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
