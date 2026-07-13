@@ -65,7 +65,7 @@ export default function Sidebar({ open }: SidebarProps) {
         borderRight: '4px solid #94b43c',
       }}
     >
-      <List sx={{ flexGrow: 1, py: 2 }}>
+      <List sx={{ flexGrow: 1, py: 2 }} role="navigation" aria-label="Menú principal">
         {menuItems.map((item, index) =>
           item.divider ? (
             <Divider key={`divider-${index}`} sx={{ my: 1, borderColor: 'rgba(255,255,255,0.2)' }} />
@@ -74,6 +74,8 @@ export default function Sidebar({ open }: SidebarProps) {
               <ListItemButton
                 onClick={() => navigate(item.path)}
                 selected={location.pathname === item.path}
+                aria-label={item.text}
+                aria-current={location.pathname === item.path ? 'page' : undefined}
                 sx={{
                   mx: 2,
                   my: 0.5,
@@ -90,7 +92,7 @@ export default function Sidebar({ open }: SidebarProps) {
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+                <ListItemIcon sx={{ color: 'white', minWidth: 40 }} aria-hidden="true">
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText

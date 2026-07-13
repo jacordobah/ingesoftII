@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMediaQuery, useTheme } from '@mui/material';
+import type { Ticket } from '../../types';
 import {
   Paper,
   Box,
@@ -29,7 +30,7 @@ export default function HistorialTickets() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const misTickets = useMemo(() => {
@@ -38,12 +39,12 @@ export default function HistorialTickets() {
   }, [user, tickets, getTicketsByUsuario]);
 
   // Función para obtener el nombre del técnico por ID
-  const getNombreTecnico = (tecnicoId: string) => {
+  const getNombreTecnico = useCallback((tecnicoId: string) => {
     const tecnico = users.find((u) => u.id === tecnicoId);
     return tecnico ? tecnico.nombre : tecnicoId;
-  };
+  }, [users]);
 
-  const getStatusColor = (estado: string) => {
+  const getStatusColor = useCallback((estado: string) => {
     switch (estado) {
       case 'abierto':
         return { bgcolor: '#eff6ff', color: '#1e40af' };
@@ -54,9 +55,9 @@ export default function HistorialTickets() {
       default:
         return { bgcolor: '#f3f4f6', color: '#374151' };
     }
-  };
+  }, []);
 
-  const getStatusLabel = (estado: string) => {
+  const getStatusLabel = useCallback((estado: string) => {
     switch (estado) {
       case 'abierto':
         return 'Abierto';
@@ -67,17 +68,17 @@ export default function HistorialTickets() {
       default:
         return estado;
     }
-  };
+  }, []);
 
-  const handleVerDetalle = (ticket: typeof tickets[0]) => {
+  const handleVerDetalle = useCallback((ticket: Ticket) => {
     setSelectedTicket(ticket);
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setModalOpen(false);
     setSelectedTicket(null);
-  };
+  }, []);
 
   return (
     <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 4 }, display: 'flex', justifyContent: 'center' }}>

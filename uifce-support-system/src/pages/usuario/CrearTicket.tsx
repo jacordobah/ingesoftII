@@ -14,6 +14,18 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { mockCategorias, mockSubcategorias, mockUbicaciones, mockEdificios } from '../../data/mockData';
 
+/**
+ * Componente CrearTicket
+ * 
+ * Formulario para crear nuevos tickets de soporte.
+ * Calcula automáticamente la prioridad y tiempo estimado
+ * basándose en la subcategoría, ubicación y cantidad de equipos.
+ * 
+ * @example
+ * ```tsx
+ * <CrearTicket />
+ * ```
+ */
 export default function CrearTicket() {
   const { crearTicket } = useApp();
   const navigate = useNavigate();

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import {
   Paper,
@@ -30,14 +30,27 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { calcularTiempoRestante, formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
 import { mockCategorias, mockSubcategorias, mockUbicaciones, mockEdificios } from '../../data/mockData';
+import type { Ticket } from '../../types';
 
+/**
+ * Componente ColaTickets
+ * 
+ * Muestra la cola de tickets para administradores y técnicos.
+ * Permite filtrar por estado, ver detalles, asignar técnicos,
+ * cambiar estado de tickets y modificar categoría/ubicación.
+ * 
+ * @example
+ * ```tsx
+ * <ColaTickets />
+ * ```
+ */
 export default function ColaTickets() {
   const { tickets, actualizarTicketCompleto, users, actualizarCategoriaTicket, user } = useApp();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTecnico = user?.rol === 'tecnico';
   const [filtroEstado, setFiltroEstado] = useState('activos');
-  const [ticketSeleccionado, setTicketSeleccionado] = useState<any>(null);
+  const [ticketSeleccionado, setTicketSeleccionado] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [nuevoEstado, setNuevoEstado] = useState('');
   const [nuevoTecnico, setNuevoTecnico] = useState('');
@@ -86,7 +99,7 @@ export default function ColaTickets() {
     });
   }, [tickets, filtroEstado]);
 
-  const getPriorityColor = (prioridad: string) => {
+  const getPriorityColor = useCallback((prioridad: string) => {
     switch (prioridad) {
       case 'critica':
         return { bgcolor: '#fee2e2', color: '#991b1b' };
@@ -97,9 +110,9 @@ export default function ColaTickets() {
       default:
         return { bgcolor: '#f3f4f6', color: '#374151' };
     }
-  };
+  }, []);
 
-  const getStatusColor = (estado: string) => {
+  const getStatusColor = useCallback((estado: string) => {
     switch (estado) {
       case 'abierto':
         return { bgcolor: '#eff6ff', color: '#1e40af' };
@@ -110,9 +123,9 @@ export default function ColaTickets() {
       default:
         return { bgcolor: '#f3f4f6', color: '#374151' };
     }
-  };
+  }, []);
 
-  const getStatusLabel = (estado: string) => {
+  const getStatusLabel = useCallback((estado: string) => {
     switch (estado) {
       case 'abierto':
         return 'Abierto';
@@ -123,9 +136,9 @@ export default function ColaTickets() {
       default:
         return estado;
     }
-  };
+  }, []);
 
-  const handleRowClick = (ticket: any) => {
+  const handleRowClick = useCallback((ticket: Ticket) => {
     setTicketSeleccionado(ticket);
     setNuevoEstado(ticket.estado);
     setNuevoTecnico(ticket.tecnicoAsignado || '');
@@ -138,20 +151,27 @@ export default function ColaTickets() {
     const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticket.ubicacion);
     setNuevoEdificio(ubicacionActual?.edificio || '');
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleIniciarEdicionCategoria = () => {
+  const handleKeyDown = useCallback((event: React.KeyboardEvent, ticket: Ticket) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleRowClick(ticket);
+    }
+  }, [handleRowClick]);
+
+  const handleIniciarEdicionCategoria = useCallback(() => {
     setEditandoCategoria(true);
-  };
+  }, []);
 
-  const handleCancelarEdicionCategoria = () => {
+  const handleCancelarEdicionCategoria = useCallback(() => {
     setEditandoCategoria(false);
-    setNuevaCategoria(ticketSeleccionado.categoria);
-    setNuevaSubcategoria(ticketSeleccionado.subcategoria);
-    setNuevaUbicacion(ticketSeleccionado.ubicacion);
-    const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticketSeleccionado.ubicacion);
+    setNuevaCategoria(ticketSeleccionado?.categoria || '');
+    setNuevaSubcategoria(ticketSeleccionado?.subcategoria || '');
+    setNuevaUbicacion(ticketSeleccionado?.ubicacion || '');
+    const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticketSeleccionado?.ubicacion);
     setNuevoEdificio(ubicacionActual?.edificio || '');
-  };
+  }, [ticketSeleccionado]);
 
   const handleGuardarCategoria = () => {
     if (!ticketSeleccionado) return;

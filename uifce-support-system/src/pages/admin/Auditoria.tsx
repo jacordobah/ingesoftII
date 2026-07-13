@@ -19,6 +19,19 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { useApp } from '../../contexts/AppContext';
 import { formatearFechaHora } from '../../utils/ticketUtils';
 
+/**
+ * Componente Auditoria
+ * 
+ * Muestra el registro de auditoría con todas las acciones realizadas
+ * en el sistema (creación, asignación, reasignación, cambio de estado,
+ * modificación de categoría, inclusión de comentarios y cierre de tickets).
+ * Permite exportar los registros a formato CSV.
+ * 
+ * @example
+ * ```tsx
+ * <Auditoria />
+ * ```
+ */
 export default function Auditoria() {
   const { auditoria } = useApp();
   const theme = useTheme();

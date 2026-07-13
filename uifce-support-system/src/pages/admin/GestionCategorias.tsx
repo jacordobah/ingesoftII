@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Subcategoria } from '../../types';
 import {
   Paper,
   Box,
@@ -26,7 +27,7 @@ import { mockCategorias, mockSubcategorias, mockTickets } from '../../data/mockD
 
 export default function GestionCategorias() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
-  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<any>(null);
+  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<Subcategoria | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'categoria' | 'subcategoria'>('subcategoria');
   const [editNombre, setEditNombre] = useState('');

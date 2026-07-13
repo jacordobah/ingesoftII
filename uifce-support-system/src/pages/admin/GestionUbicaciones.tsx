@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Ubicacion } from '../../types';
 import {
   Paper,
   Box,
@@ -26,7 +27,7 @@ import { mockUbicaciones, mockEdificios, mockTickets } from '../../data/mockData
 
 export default function GestionUbicaciones() {
   const [edificioSeleccionado, setEdificioSeleccionado] = useState<string | null>(null);
-  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<any>(null);
+  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<Ubicacion | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'edificio' | 'ubicacion'>('ubicacion');
   const [editNombre, setEditNombre] = useState('');

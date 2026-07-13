@@ -16,6 +16,18 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { mockCategorias, mockEdificios } from '../../data/mockData';
 
+/**
+ * Componente Dashboard
+ * 
+ * Panel de control administrativo que muestra métricas y estadísticas
+ * del sistema de tickets. Incluye filtros por fecha, categoría, edificio,
+ * estado y técnico para generar reportes personalizados.
+ * 
+ * @example
+ * ```tsx
+ * <Dashboard />
+ * ```
+ */
 export default function Dashboard() {
   const { tickets, users } = useApp();
 
