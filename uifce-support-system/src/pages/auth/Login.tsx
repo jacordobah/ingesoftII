@@ -21,7 +21,7 @@ export default function Login() {
   const { login } = useApp();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setEmailError('');
@@ -49,7 +49,7 @@ export default function Login() {
       return;
     }
 
-    const success = login(email, password);
+    const success = await login(email, password);
     if (success) {
       navigate('/');
     } else {

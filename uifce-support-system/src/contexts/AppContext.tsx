@@ -1,8 +1,9 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Ticket, Auditoria, TicketStatus } from '../types';
 import { mockTickets, mockAuditoria, mockUsers } from '../data/mockData';
 import { generateTicketId, calcularPrioridad, calcularTiempoRespuesta, calcularPuntajeTotal } from '../utils/ticketUtils';
+import { apiRequest, ENDPOINTS } from '../config/api';
 
 interface AppContextType {
   // Estado
@@ -13,7 +14,7 @@ interface AppContextType {
   isAuthenticated: boolean;
 
   // Acciones de autenticación (RF-01)
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 
   // Acciones de tickets (RF-02, RF-03, RF-04, RF-05, RF-06)
@@ -48,38 +49,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
   const [auditoria, setAuditoria] = useState<Auditoria[]>(mockAuditoria);
-  const [users] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>(mockUsers);
 
   const isAuthenticated = user !== null;
 
-  // RF-01: Simular autenticación OAuth con correo institucional
-  const login = (email: string, _password: string): boolean => {
-    // Validar que sea correo institucional UNAL
-    if (!email.endsWith('@unal.edu.co')) {
+  // RF-01: Autenticación con API real
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await apiRequest<{ token: string; user: User }>(
+        ENDPOINTS.auth.login,
+        {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      // Guardar token y usuario
+      localStorage.setItem('token', response.token);
+      setUser(response.user);
+      return true;
+    } catch (error) {
+      console.error('Error en login:', error);
       return false;
     }
-
-    // Buscar usuario en mock data
-    const foundUser = mockUsers.find((u) => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
-      return true;
-    }
-
-    // Si no existe, crear usuario temporal
-    const newUser: User = {
-      id: `USR-${Date.now()}`,
-      nombre: email.split('@')[0],
-      email,
-      rol: 'usuario',
-    };
-    setUser(newUser);
-    return true;
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('token');
   };
+
+  // Cargar tickets desde la API
+  const loadTickets = async () => {
+    try {
+      const response = await apiRequest<Ticket[]>(ENDPOINTS.tickets.getAll);
+      setTickets(response);
+    } catch (error) {
+      console.error('Error al cargar tickets:', error);
+      // Usar mock data como fallback
+      setTickets(mockTickets);
+    }
+  };
+
+  // Cargar usuarios desde la API
+  const loadUsers = async () => {
+    try {
+      const response = await apiRequest<User[]>(ENDPOINTS.usuarios.getAll);
+      setUsers(response);
+    } catch (error) {
+      console.error('Error al cargar usuarios:', error);
+    }
+  };
+
+  // Cargar datos iniciales cuando hay usuario autenticado
+  useEffect(() => {
+    if (user) {
+      loadTickets();
+      loadUsers();
+    }
+  }, [user]);
 
   // RF-02, RF-03, RF-04, RF-05, RF-06: Crear ticket
   const crearTicket = (data: {
