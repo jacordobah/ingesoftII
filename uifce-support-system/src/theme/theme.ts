@@ -51,6 +51,7 @@ export const themeOptions: ThemeOptions = {
     text: {
       primary: '#002f6c',
       secondary: '#1a1a1a',
+      disabled: '#757575',
     },
   },
   typography: {
@@ -163,11 +164,19 @@ export const themeOptions: ThemeOptions = {
         },
       },
     },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          // No establecer color predeterminado para permitir que cada componente defina su color según el fondo
+        },
+      },
+    },
     MuiPaper: {
       styleOverrides: {
         root: {
           borderRadius: 8,
           transition: 'all 0.3s ease-in-out',
+          color: '#002f6c',
         },
       },
     },
@@ -225,6 +234,11 @@ export const themeOptions: ThemeOptions = {
           '&:hover': {
             transform: 'scale(1.05)',
           },
+        },
+      },
+      defaultProps: {
+        sx: {
+          color: '#002f6c',
         },
       },
     },

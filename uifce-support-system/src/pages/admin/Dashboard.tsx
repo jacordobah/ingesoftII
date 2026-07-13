@@ -287,41 +287,41 @@ export default function Dashboard() {
       {/* Resumen General */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
         <Card sx={{ bgcolor: '#002f6c', color: 'white', flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%' } }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
+          <CardContent sx={{ color: 'white' }}>
+            <Typography variant="subtitle2" sx={{ opacity: 1, fontWeight: 600, color: 'white' }}>
               Total Tickets
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1, color: 'white' }}>
               {metrics.totalTickets}
             </Typography>
           </CardContent>
         </Card>
-        <Card sx={{ bgcolor: '#94b43c', color: '#002f6c', flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%' } }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
+        <Card sx={{ bgcolor: '#94b43c', color: '#ffffff', flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%' } }}>
+          <CardContent sx={{ color: '#ffffff' }}>
+            <Typography variant="subtitle2" sx={{ opacity: 1, fontWeight: 600, color: '#ffffff' }}>
               Abiertos
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1, color: '#ffffff' }}>
               {metrics.ticketsPorEstado.abierto}
             </Typography>
           </CardContent>
         </Card>
         <Card sx={{ bgcolor: '#f59e0b', color: 'white', flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%' } }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
+          <CardContent sx={{ color: 'white' }}>
+            <Typography variant="subtitle2" sx={{ opacity: 1, fontWeight: 600, color: 'white' }}>
               En Proceso
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1, color: 'white' }}>
               {metrics.ticketsPorEstado.en_proceso}
             </Typography>
           </CardContent>
         </Card>
         <Card sx={{ bgcolor: '#10b981', color: 'white', flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%' } }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
+          <CardContent sx={{ color: 'white' }}>
+            <Typography variant="subtitle2" sx={{ opacity: 1, fontWeight: 600, color: 'white' }}>
               Cerrados
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', mt: 1, color: 'white' }}>
               {metrics.ticketsPorEstado.cerrado}
             </Typography>
           </CardContent>
@@ -361,7 +361,7 @@ export default function Dashboard() {
                     transition: 'height 0.3s ease',
                   }}
                 />
-                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: '#666' }}>
+                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: '#1a1a1a' }}>
                   {semana.fecha}
                 </Typography>
               </Box>
@@ -379,7 +379,7 @@ export default function Dashboard() {
           {metrics.ticketsPorTecnico.map((tecnico) => (
             <Card variant="outlined" sx={{ flex: { xs: '1 1 100%', sm: '1 1 48%', md: '1 1 31%' } }} key={tecnico.tecnicoId}>
               <CardContent>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1, color: '#002f6c' }}>
                   {tecnico.tecnico}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
@@ -430,7 +430,7 @@ export default function Dashboard() {
           <Typography variant="subtitle2" sx={{ color: '#002f6c', fontWeight: 'bold', mb: 1 }}>
             Tiempo Promedio de Respuesta
           </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#002f6c' }}>
             {formatTiempo(metrics.tiempoPromedioRespuesta)}
           </Typography>
         </Paper>
@@ -438,7 +438,7 @@ export default function Dashboard() {
           <Typography variant="subtitle2" sx={{ color: '#002f6c', fontWeight: 'bold', mb: 1 }}>
             Tiempo Promedio de Resolución
           </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#002f6c' }}>
             {formatTiempo(metrics.tiempoPromedioResolucion)}
           </Typography>
         </Paper>
