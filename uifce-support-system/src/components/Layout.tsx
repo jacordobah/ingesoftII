@@ -97,7 +97,7 @@ export default function Layout({ children }: LayoutProps) {
               ) : (
                 <ListItem key={item.path} disablePadding>
                   <ListItemButton
-                    onClick={() => handleNavigate(item.path)}
+                    onClick={() => item.path && handleNavigate(item.path)}
                     selected={location.pathname === item.path}
                     sx={{
                       mx: 2,

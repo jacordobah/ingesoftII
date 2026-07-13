@@ -85,11 +85,11 @@ export default function GestionUsuarios() {
       console.log('Crear usuario:', { email: nuevoEmail, rol: nuevoRol });
     } else {
       // Validación: debe haber al menos un admin
-      if (nuevoRol !== 'admin' && admins.length === 1 && admins[0].id === usuarioSeleccionado.id) {
+      if (nuevoRol !== 'admin' && admins.length === 1 && admins[0].id === usuarioSeleccionado?.id) {
         alert('El sistema debe tener al menos un usuario administrador.');
         return;
       }
-      console.log('Cambiar rol:', { userId: usuarioSeleccionado.id, nuevoRol });
+      console.log('Cambiar rol:', { userId: usuarioSeleccionado?.id, nuevoRol });
     }
     setModalOpen(false);
   };

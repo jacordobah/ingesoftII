@@ -57,7 +57,7 @@ export const PageSubtitle = styled(Typography)(({ theme }) => ({
 }));
 
 // Botón primario institucional
-export const PrimaryButton = styled(Button)(({ theme }) => ({
+export const PrimaryButton = styled(Button)(() => ({
   backgroundColor: '#94b43c',
   color: '#002f6c',
   fontWeight: 'bold',

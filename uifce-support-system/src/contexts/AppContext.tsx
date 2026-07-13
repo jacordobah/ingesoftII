@@ -89,7 +89,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cantidadEquipos: string;
     telefonoContacto: string;
     descripcion: string;
-    puntajeCategoria: number;
     puntajeSubcategoria: number;
     puntajeUbicacion: number;
     puntajeCantidad: number;

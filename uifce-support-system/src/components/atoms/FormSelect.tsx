@@ -74,7 +74,7 @@ export function FormSelect({
         label={label}
         name={name}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value as string)}
         displayEmpty={!!placeholder}
         sx={{
           '& .MuiOutlinedInput-notchedOutline': {

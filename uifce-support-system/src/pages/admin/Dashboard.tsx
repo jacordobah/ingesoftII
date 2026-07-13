@@ -92,7 +92,7 @@ export default function Dashboard() {
     const ticketsCerrados = ticketsFiltrados.filter((t) => t.estado === 'cerrado' && t.fechaResolucion && t.fechaCreacion);
     const tiempoPromedioResolucion = ticketsCerrados.length > 0
       ? ticketsCerrados.reduce((acc, t) => {
-          const tiempo = new Date(t.fechaResolucion).getTime() - new Date(t.fechaCreacion).getTime();
+          const tiempo = (t.fechaResolucion ? new Date(t.fechaResolucion).getTime() : 0) - new Date(t.fechaCreacion).getTime();
           return acc + tiempo;
         }, 0) / ticketsCerrados.length
       : 0;

@@ -19,10 +19,6 @@ import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DescriptionIcon from '@mui/icons-material/Description';
 
-interface SidebarProps {
-  // open?: boolean;
-}
-
 export default function Sidebar() {
   const { user } = useApp();
   const navigate = useNavigate();
@@ -80,7 +76,7 @@ export default function Sidebar() {
           ) : (
             <ListItem key={item.path} disablePadding>
               <ListItemButton
-                onClick={() => navigate(item.path)}
+                onClick={() => item.path && navigate(item.path)}
                 selected={location.pathname === item.path}
                 aria-label={item.text}
                 aria-current={location.pathname === item.path ? 'page' : undefined}

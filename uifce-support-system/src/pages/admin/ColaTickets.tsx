@@ -153,13 +153,6 @@ export default function ColaTickets() {
     setModalOpen(true);
   }, []);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent, ticket: Ticket) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleRowClick(ticket);
-    }
-  }, [handleRowClick]);
-
   const handleIniciarEdicionCategoria = useCallback(() => {
     setEditandoCategoria(true);
   }, []);
