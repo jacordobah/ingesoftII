@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMediaQuery, useTheme } from '@mui/material';
 import {
   Paper,
   Box,
@@ -21,14 +22,17 @@ import {
   InputLabel,
   Alert,
   TextField,
+  Card,
+  CardContent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { mockUsers, mockTickets } from '../../data/mockData';
 
 const ADMIN_PROTEGIDO = 'uniic_bog@unal.edu.co';
 
 export default function GestionUsuarios() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [nuevoRol, setNuevoRol] = useState<'tecnico' | 'admin'>('tecnico');
@@ -117,85 +121,158 @@ export default function GestionUsuarios() {
                 bgcolor: '#94b43c',
                 color: '#002f6c',
                 '&:hover': { bgcolor: '#7a9a30' },
+                width: { xs: '100%', sm: 'auto' },
               }}
             >
               Agregar Usuario
             </Button>
           </Box>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Nombre</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Email</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Rol</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {tecnicosYAdmins.map((usuario) => (
-                  <TableRow key={usuario.id}>
-                    <TableCell>{usuario.nombre}</TableCell>
-                    <TableCell>{usuario.email}</TableCell>
-                    <TableCell>
+          {isMobile ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {tecnicosYAdmins.map((usuario) => (
+                <Card key={usuario.id} variant="outlined">
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                        {usuario.nombre}
+                      </Typography>
                       <Chip
                         label={usuario.rol === 'admin' ? 'Administrador' : 'Técnico'}
+                        size="small"
                         sx={{
                           bgcolor: usuario.rol === 'admin' ? '#94b43c' : '#e0e0e0',
                           color: usuario.rol === 'admin' ? '#002f6c' : '#666',
                           fontWeight: 'bold',
                         }}
                       />
-                      {esAdminProtegido(usuario.email) && (
-                        <Chip
-                          label="Protegido"
-                          size="small"
-                          sx={{ ml: 1, bgcolor: '#ff9800', color: 'white', fontWeight: 'bold' }}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleCambiarRol(usuario)}
-                          disabled={esAdminProtegido(usuario.email)}
-                          sx={{
-                            color: '#94b43c',
-                            borderColor: '#94b43c',
-                            '&:hover': {
-                              borderColor: '#7a9a30',
-                              bgcolor: 'rgba(148, 180, 60, 0.1)',
-                            },
-                          }}
-                        >
-                          Cambiar Rol
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleEliminarClick(usuario)}
-                          disabled={esAdminProtegido(usuario.email) || usuario.rol === 'admin'}
-                          color="error"
-                          sx={{
-                            borderColor: '#f44336',
-                            color: '#f44336',
-                            '&:hover': {
-                              borderColor: '#d32f2f',
-                              bgcolor: 'rgba(244, 67, 54, 0.1)',
-                            },
-                          }}
-                        >
-                          Eliminar
-                        </Button>
-                      </Box>
-                    </TableCell>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
+                      {usuario.email}
+                    </Typography>
+                    {esAdminProtegido(usuario.email) && (
+                      <Chip
+                        label="Protegido"
+                        size="small"
+                        sx={{ mb: 1, bgcolor: '#ff9800', color: 'white', fontWeight: 'bold' }}
+                      />
+                    )}
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1, flexDirection: 'column' }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleCambiarRol(usuario)}
+                        disabled={esAdminProtegido(usuario.email)}
+                        fullWidth
+                        sx={{
+                          color: '#94b43c',
+                          borderColor: '#94b43c',
+                          '&:hover': {
+                            borderColor: '#7a9a30',
+                            bgcolor: 'rgba(148, 180, 60, 0.1)',
+                          },
+                        }}
+                      >
+                        Cambiar Rol
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleEliminarClick(usuario)}
+                        disabled={esAdminProtegido(usuario.email) || usuario.rol === 'admin'}
+                        color="error"
+                        fullWidth
+                        sx={{
+                          borderColor: '#f44336',
+                          color: '#f44336',
+                          '&:hover': {
+                            borderColor: '#d32f2f',
+                            bgcolor: 'rgba(244, 67, 54, 0.1)',
+                          },
+                        }}
+                      >
+                        Eliminar
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Nombre</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Email</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Rol</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: '#002f6c' }}>Acciones</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {tecnicosYAdmins.map((usuario) => (
+                    <TableRow key={usuario.id}>
+                      <TableCell>{usuario.nombre}</TableCell>
+                      <TableCell>{usuario.email}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={usuario.rol === 'admin' ? 'Administrador' : 'Técnico'}
+                          sx={{
+                            bgcolor: usuario.rol === 'admin' ? '#94b43c' : '#e0e0e0',
+                            color: usuario.rol === 'admin' ? '#002f6c' : '#666',
+                            fontWeight: 'bold',
+                          }}
+                        />
+                        {esAdminProtegido(usuario.email) && (
+                          <Chip
+                            label="Protegido"
+                            size="small"
+                            sx={{ ml: 1, bgcolor: '#ff9800', color: 'white', fontWeight: 'bold' }}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleCambiarRol(usuario)}
+                            disabled={esAdminProtegido(usuario.email)}
+                            sx={{
+                              color: '#94b43c',
+                              borderColor: '#94b43c',
+                              '&:hover': {
+                                borderColor: '#7a9a30',
+                                bgcolor: 'rgba(148, 180, 60, 0.1)',
+                              },
+                            }}
+                          >
+                            Cambiar Rol
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleEliminarClick(usuario)}
+                            disabled={esAdminProtegido(usuario.email) || usuario.rol === 'admin'}
+                            color="error"
+                            sx={{
+                              borderColor: '#f44336',
+                              color: '#f44336',
+                              '&:hover': {
+                                borderColor: '#d32f2f',
+                                bgcolor: 'rgba(244, 67, 54, 0.1)',
+                              },
+                            }}
+                          >
+                            Eliminar
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Box>
       </Paper>
 
