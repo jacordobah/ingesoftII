@@ -7,13 +7,13 @@ const router = Router();
 // Obtener todas las categorías
 router.get('/', authenticateToken, async (req: any, res: Response) => {
   try {
-    const result = await pool.query(
+    const [rows] = await pool.query(
       `SELECT c.*, 
        (SELECT COUNT(*) FROM subcategorias WHERE categoria_id = c.id) as subcategorias_count
        FROM categorias c 
        ORDER BY c.nombre ASC`
     );
-    res.json(result.rows);
+    res.json(rows);
   } catch (error) {
     console.error('Error al obtener categorías:', error);
     res.status(500).json({ error: 'Error al obtener categorías' });
@@ -25,20 +25,20 @@ router.get('/:id', authenticateToken, async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     
-    const categoriaResult = await pool.query('SELECT * FROM categorias WHERE id = $1', [id]);
+    const [categoriaResult] = await pool.query('SELECT * FROM categorias WHERE id = ?', [id]);
     
-    if (categoriaResult.rows.length === 0) {
+    if (categoriaResult.length === 0) {
       return res.status(404).json({ error: 'Categoría no encontrada' });
     }
 
-    const subcategoriasResult = await pool.query(
-      'SELECT * FROM subcategorias WHERE categoria_id = $1 ORDER BY nombre ASC',
+    const [subcategoriasResult] = await pool.query(
+      'SELECT * FROM subcategorias WHERE categoria_id = ? ORDER BY nombre ASC',
       [id]
     );
 
     res.json({
-      ...categoriaResult.rows[0],
-      subcategorias: subcategoriasResult.rows,
+      ...categoriaResult[0],
+      subcategorias: subcategoriasResult,
     });
   } catch (error) {
     console.error('Error al obtener categoría:', error);
@@ -55,12 +55,13 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req: any, res
       return res.status(400).json({ error: 'El nombre es requerido' });
     }
 
-    const result = await pool.query(
-      'INSERT INTO categorias (nombre, descripcion) VALUES ($1, $2) RETURNING *',
+    const [result] = await pool.query(
+      'INSERT INTO categorias (nombre, descripcion) VALUES (?, ?)',
       [nombre, descripcion]
     );
 
-    res.status(201).json(result.rows[0]);
+    const [newCategoria] = await pool.query('SELECT * FROM categorias WHERE id = ?', [result.insertId]);
+    res.status(201).json(newCategoria[0]);
   } catch (error) {
     console.error('Error al crear categoría:', error);
     res.status(500).json({ error: 'Error al crear categoría' });
@@ -75,18 +76,15 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req: any, r
 
     const updates: string[] = [];
     const params: any[] = [];
-    let paramIndex = 1;
 
     if (nombre) {
-      updates.push(`nombre = $${paramIndex}`);
+      updates.push(`nombre = ?`);
       params.push(nombre);
-      paramIndex++;
     }
 
     if (descripcion !== undefined) {
-      updates.push(`descripcion = $${paramIndex}`);
+      updates.push(`descripcion = ?`);
       params.push(descripcion);
-      paramIndex++;
     }
 
     if (updates.length === 0) {
@@ -94,15 +92,17 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req: any, r
     }
 
     params.push(id);
-    const query = `UPDATE categorias SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const query = `UPDATE categorias SET ${updates.join(', ')} WHERE id = ?`;
 
-    const result = await pool.query(query, params);
+    await pool.query(query, params);
     
-    if (result.rows.length === 0) {
+    const [updatedCategoria] = await pool.query('SELECT * FROM categorias WHERE id = ?', [id]);
+    
+    if (updatedCategoria.length === 0) {
       return res.status(404).json({ error: 'Categoría no encontrada' });
     }
 
-    res.json(result.rows[0]);
+    res.json(updatedCategoria[0]);
   } catch (error) {
     console.error('Error al actualizar categoría:', error);
     res.status(500).json({ error: 'Error al actualizar categoría' });
@@ -114,9 +114,9 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req: any
   try {
     const { id } = req.params;
     
-    const result = await pool.query('DELETE FROM categorias WHERE id = $1 RETURNING *', [id]);
+    const [result] = await pool.query('DELETE FROM categorias WHERE id = ?', [id]);
     
-    if (result.rows.length === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Categoría no encontrada' });
     }
 

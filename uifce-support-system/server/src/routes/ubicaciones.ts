@@ -11,18 +11,16 @@ router.get('/', authenticateToken, async (req: any, res: Response) => {
     
     let query = 'SELECT * FROM ubicaciones WHERE 1=1';
     const params: any[] = [];
-    let paramIndex = 1;
 
     if (edificio) {
-      query += ` AND edificio = $${paramIndex}`;
+      query += ` AND edificio = ?`;
       params.push(edificio);
-      paramIndex++;
     }
 
     query += ' ORDER BY edificio, nombre ASC';
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    const [rows] = await pool.query(query, params);
+    res.json(rows);
   } catch (error) {
     console.error('Error al obtener ubicaciones:', error);
     res.status(500).json({ error: 'Error al obtener ubicaciones' });
@@ -30,10 +28,10 @@ router.get('/', authenticateToken, async (req: any, res: Response) => {
 });
 
 // Obtener todos los edificios
-router.get('/edificios/all', authenticateToken, async (req: any, res: Response) => {
+router.get('/edificios/all', authenticateToken, async (_req: any, res: Response) => {
   try {
-    const result = await pool.query('SELECT nombre FROM edificios ORDER BY nombre ASC');
-    res.json(result.rows);
+    const [rows] = await pool.query('SELECT nombre FROM edificios ORDER BY nombre ASC');
+    res.json(rows);
   } catch (error) {
     console.error('Error al obtener edificios:', error);
     res.status(500).json({ error: 'Error al obtener edificios' });
@@ -45,13 +43,13 @@ router.get('/:id', authenticateToken, async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     
-    const result = await pool.query('SELECT * FROM ubicaciones WHERE id = $1', [id]);
+    const [rows] = await pool.query('SELECT * FROM ubicaciones WHERE id = ?', [id]);
     
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ error: 'Ubicación no encontrada' });
     }
 
-    res.json(result.rows[0]);
+    res.json(rows[0]);
   } catch (error) {
     console.error('Error al obtener ubicación:', error);
     res.status(500).json({ error: 'Error al obtener ubicación' });
@@ -72,12 +70,13 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req: any, res
       return res.status(400).json({ error: 'El puntaje debe estar entre 1 y 10' });
     }
 
-    const result = await pool.query(
-      'INSERT INTO ubicaciones (nombre, edificio, puntaje) VALUES ($1, $2, $3) RETURNING *',
+    const [result] = await pool.query(
+      'INSERT INTO ubicaciones (nombre, edificio, puntaje) VALUES (?, ?, ?)',
       [nombre, edificio, puntaje]
     );
 
-    res.status(201).json(result.rows[0]);
+    const [newUbicacion] = await pool.query('SELECT * FROM ubicaciones WHERE id = ?', [result.insertId]);
+    res.status(201).json(newUbicacion[0]);
   } catch (error) {
     console.error('Error al crear ubicación:', error);
     res.status(500).json({ error: 'Error al crear ubicación' });
@@ -93,12 +92,13 @@ router.post('/edificios', authenticateToken, requireRole(['admin']), async (req:
       return res.status(400).json({ error: 'El nombre es requerido' });
     }
 
-    const result = await pool.query(
-      'INSERT INTO edificios (nombre) VALUES ($1) RETURNING *',
+    const [result] = await pool.query(
+      'INSERT INTO edificios (nombre) VALUES (?)',
       [nombre]
     );
 
-    res.status(201).json(result.rows[0]);
+    const [newEdificio] = await pool.query('SELECT * FROM edificios WHERE nombre = ?', [nombre]);
+    res.status(201).json(newEdificio[0]);
   } catch (error) {
     console.error('Error al crear edificio:', error);
     res.status(500).json({ error: 'Error al crear edificio' });
@@ -113,27 +113,23 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req: any, r
 
     const updates: string[] = [];
     const params: any[] = [];
-    let paramIndex = 1;
 
     if (nombre) {
-      updates.push(`nombre = $${paramIndex}`);
+      updates.push(`nombre = ?`);
       params.push(nombre);
-      paramIndex++;
     }
 
     if (edificio) {
-      updates.push(`edificio = $${paramIndex}`);
+      updates.push(`edificio = ?`);
       params.push(edificio);
-      paramIndex++;
     }
 
     if (puntaje) {
       if (puntaje < 1 || puntaje > 10) {
         return res.status(400).json({ error: 'El puntaje debe estar entre 1 y 10' });
       }
-      updates.push(`puntaje = $${paramIndex}`);
+      updates.push(`puntaje = ?`);
       params.push(puntaje);
-      paramIndex++;
     }
 
     if (updates.length === 0) {
@@ -141,15 +137,17 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req: any, r
     }
 
     params.push(id);
-    const query = `UPDATE ubicaciones SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const query = `UPDATE ubicaciones SET ${updates.join(', ')} WHERE id = ?`;
 
-    const result = await pool.query(query, params);
+    await pool.query(query, params);
     
-    if (result.rows.length === 0) {
+    const [updatedUbicacion] = await pool.query('SELECT * FROM ubicaciones WHERE id = ?', [id]);
+    
+    if (updatedUbicacion.length === 0) {
       return res.status(404).json({ error: 'Ubicación no encontrada' });
     }
 
-    res.json(result.rows[0]);
+    res.json(updatedUbicacion[0]);
   } catch (error) {
     console.error('Error al actualizar ubicación:', error);
     res.status(500).json({ error: 'Error al actualizar ubicación' });
@@ -161,9 +159,9 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req: any
   try {
     const { id } = req.params;
     
-    const result = await pool.query('DELETE FROM ubicaciones WHERE id = $1 RETURNING *', [id]);
+    const [result] = await pool.query('DELETE FROM ubicaciones WHERE id = ?', [id]);
     
-    if (result.rows.length === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Ubicación no encontrada' });
     }
 

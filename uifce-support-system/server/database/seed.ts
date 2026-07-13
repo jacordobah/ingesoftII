@@ -11,7 +11,7 @@ async function seedDatabase() {
     await pool.query('DELETE FROM tickets');
     await pool.query('DELETE FROM subcategorias');
     await pool.query('DELETE FROM ubicaciones');
-    await pool.query('DELETE FROM usuarios WHERE email != $1', ['uniic_bog@unal.edu.co']);
+    await pool.query('DELETE FROM usuarios WHERE email != ?', ['uniic_bog@unal.edu.co']);
     console.log('Datos limpiados correctamente');
 
     // Insertar usuario admin bloqueado (no se puede eliminar)
@@ -20,12 +20,12 @@ async function seedDatabase() {
     
     await pool.query(
       `INSERT INTO usuarios (email, password, nombre, rol, activo) 
-       VALUES ($1, $2, $3, $4, $5) 
-       ON CONFLICT (email) DO UPDATE SET 
-         password = EXCLUDED.password,
-         nombre = EXCLUDED.nombre,
-         rol = EXCLUDED.rol,
-         activo = EXCLUDED.activo`,
+       VALUES (?, ?, ?, ?, ?) 
+       ON DUPLICATE KEY UPDATE 
+         password = VALUES(password),
+         nombre = VALUES(nombre),
+         rol = VALUES(rol),
+         activo = VALUES(activo)`,
       ['uniic_bog@unal.edu.co', adminPassword, 'Administrador UIFCE', 'admin', false]
     );
     console.log('Usuario admin bloqueado insertado correctamente');

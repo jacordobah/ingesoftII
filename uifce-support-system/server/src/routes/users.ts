@@ -12,18 +12,16 @@ router.get('/', authenticateToken, requireRole(['admin']), async (req: any, res:
     
     let query = 'SELECT id, email, nombre, rol, activo, fecha_creacion FROM usuarios WHERE 1=1';
     const params: any[] = [];
-    let paramIndex = 1;
 
     if (rol) {
-      query += ` AND rol = $${paramIndex}`;
+      query += ` AND rol = ?`;
       params.push(rol);
-      paramIndex++;
     }
 
     query += ' ORDER BY nombre ASC';
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    const [rows] = await pool.query(query, params);
+    res.json(rows);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
     res.status(500).json({ error: 'Error al obtener usuarios' });
@@ -40,16 +38,16 @@ router.get('/:id', authenticateToken, async (req: any, res: Response) => {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
-    const result = await pool.query(
-      'SELECT id, email, nombre, rol, activo, fecha_creacion FROM usuarios WHERE id = $1',
+    const [rows] = await pool.query(
+      'SELECT id, email, nombre, rol, activo, fecha_creacion FROM usuarios WHERE id = ?',
       [id]
     );
     
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    res.json(result.rows[0]);
+    res.json(rows[0]);
   } catch (error) {
     console.error('Error al obtener usuario:', error);
     res.status(500).json({ error: 'Error al obtener usuario' });
@@ -76,12 +74,12 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req: any, res
     }
 
     // Verificar si el usuario ya existe
-    const existingUser = await pool.query(
-      'SELECT id FROM usuarios WHERE email = $1',
+    const [existingUser] = await pool.query(
+      'SELECT id FROM usuarios WHERE email = ?',
       [email]
     );
 
-    if (existingUser.rows.length > 0) {
+    if (existingUser.length > 0) {
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
 
@@ -89,12 +87,17 @@ router.post('/', authenticateToken, requireRole(['admin']), async (req: any, res
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insertar usuario
-    const result = await pool.query(
-      'INSERT INTO usuarios (email, password, nombre, rol) VALUES ($1, $2, $3, $4) RETURNING id, email, nombre, rol, activo, fecha_creacion',
+    const [result] = await pool.query(
+      'INSERT INTO usuarios (email, password, nombre, rol) VALUES (?, ?, ?, ?)',
       [email, hashedPassword, nombre, rol]
     );
 
-    res.status(201).json(result.rows[0]);
+    const [newUser] = await pool.query(
+      'SELECT id, email, nombre, rol, activo, fecha_creacion FROM usuarios WHERE id = ?',
+      [result.insertId]
+    );
+
+    res.status(201).json(newUser[0]);
   } catch (error) {
     console.error('Error al crear usuario:', error);
     res.status(500).json({ error: 'Error al crear usuario' });
@@ -119,31 +122,26 @@ router.put('/:id', authenticateToken, async (req: any, res: Response) => {
 
     const updates: string[] = [];
     const params: any[] = [];
-    let paramIndex = 1;
 
     if (nombre) {
-      updates.push(`nombre = $${paramIndex}`);
+      updates.push(`nombre = ?`);
       params.push(nombre);
-      paramIndex++;
     }
 
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
-      updates.push(`password = $${paramIndex}`);
+      updates.push(`password = ?`);
       params.push(hashedPassword);
-      paramIndex++;
     }
 
     if (rol && req.user?.rol === 'admin') {
-      updates.push(`rol = $${paramIndex}`);
+      updates.push(`rol = ?`);
       params.push(rol);
-      paramIndex++;
     }
 
     if (activo !== undefined && req.user?.rol === 'admin') {
-      updates.push(`activo = $${paramIndex}`);
+      updates.push(`activo = ?`);
       params.push(activo);
-      paramIndex++;
     }
 
     if (updates.length === 0) {
@@ -151,15 +149,20 @@ router.put('/:id', authenticateToken, async (req: any, res: Response) => {
     }
 
     params.push(id);
-    const query = `UPDATE usuarios SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, email, nombre, rol, activo, fecha_creacion`;
+    const query = `UPDATE usuarios SET ${updates.join(', ')} WHERE id = ?`;
 
-    const result = await pool.query(query, params);
+    await pool.query(query, params);
     
-    if (result.rows.length === 0) {
+    const [updatedUser] = await pool.query(
+      'SELECT id, email, nombre, rol, activo, fecha_creacion FROM usuarios WHERE id = ?',
+      [id]
+    );
+    
+    if (updatedUser.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    res.json(result.rows[0]);
+    res.json(updatedUser[0]);
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
     res.status(500).json({ error: 'Error al actualizar usuario' });
@@ -177,14 +180,14 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req: any
     }
 
     // Proteger usuario admin principal (uniic_bog@unal.edu.co)
-    const userResult = await pool.query('SELECT email FROM usuarios WHERE id = $1', [id]);
-    if (userResult.rows.length > 0 && userResult.rows[0].email === 'uniic_bog@unal.edu.co') {
+    const [userResult] = await pool.query('SELECT email FROM usuarios WHERE id = ?', [id]);
+    if (userResult.length > 0 && userResult[0].email === 'uniic_bog@unal.edu.co') {
       return res.status(403).json({ error: 'No se puede eliminar el usuario administrador principal' });
     }
     
-    const result = await pool.query('DELETE FROM usuarios WHERE id = $1 RETURNING id', [id]);
+    const [result] = await pool.query('DELETE FROM usuarios WHERE id = ?', [id]);
     
-    if (result.rows.length === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 

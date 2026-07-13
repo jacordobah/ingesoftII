@@ -21,34 +21,34 @@ router.get('/', authenticateToken, async (req: any, res: Response) => {
     let paramIndex = 1;
 
     if (estado) {
-      query += ` AND estado = $${paramIndex}`;
+      query += ` AND estado = ?`;
       params.push(estado);
       paramIndex++;
     }
 
     if (prioridad) {
-      query += ` AND prioridad = $${paramIndex}`;
+      query += ` AND prioridad = ?`;
       params.push(prioridad);
       paramIndex++;
     }
 
     if (usuario_id) {
-      query += ` AND usuario_id = $${paramIndex}`;
+      query += ` AND usuario_id = ?`;
       params.push(usuario_id);
       paramIndex++;
     }
 
     // Solo técnicos y admins pueden ver todos los tickets
     if (req.user?.rol === 'usuario') {
-      query += ` AND usuario_id = $${paramIndex}`;
+      query += ` AND usuario_id = ?`;
       params.push(req.user.id);
       paramIndex++;
     }
 
     query += ' ORDER BY fecha_creacion DESC';
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    const [rows] = await pool.query(query, params);
+    res.json(rows);
   } catch (error) {
     console.error('Error al obtener tickets:', error);
     res.status(500).json({ error: 'Error al obtener tickets' });
@@ -60,25 +60,25 @@ router.get('/:id', authenticateToken, async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     
-    const result = await pool.query('SELECT * FROM tickets WHERE id = $1', [id]);
+    const [rows] = await pool.query('SELECT * FROM tickets WHERE id = ?', [id]);
     
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ error: 'Ticket no encontrado' });
     }
 
     // Verificar permisos
-    const ticket = result.rows[0];
+    const ticket = rows[0];
     if (req.user?.rol === 'usuario' && ticket.usuario_id !== req.user.id) {
       return res.status(403).json({ error: 'No autorizado para ver este ticket' });
     }
 
     // Obtener comentarios
-    const comentarios = await pool.query(
-      'SELECT * FROM comentarios WHERE ticket_id = $1 ORDER BY fecha_creacion ASC',
+    const [comentarios] = await pool.query(
+      'SELECT * FROM comentarios WHERE ticket_id = ? ORDER BY fecha_creacion ASC',
       [id]
     );
 
-    res.json({ ...ticket, comentarios: comentarios.rows });
+    res.json({ ...ticket, comentarios });
   } catch (error) {
     console.error('Error al obtener ticket:', error);
     res.status(500).json({ error: 'Error al obtener ticket' });
@@ -109,12 +109,11 @@ router.post('/', authenticateToken, async (req: any, res: Response) => {
     const ticketId = generateTicketId();
     const usuarioNombre = req.user?.nombre || 'Usuario';
 
-    const result = await pool.query(
+    const [result] = await pool.query(
       `INSERT INTO tickets 
        (id, usuario_id, usuario_nombre, categoria, subcategoria, ubicacion, edificio, 
         descripcion, prioridad, estado, tiempo_estimado) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
-       RETURNING *`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         ticketId,
         req.user?.id,
@@ -130,7 +129,8 @@ router.post('/', authenticateToken, async (req: any, res: Response) => {
       ]
     );
 
-    res.status(201).json(result.rows[0]);
+    const [newTicket] = await pool.query('SELECT * FROM tickets WHERE id = ?', [ticketId]);
+    res.status(201).json(newTicket[0]);
   } catch (error) {
     console.error('Error al crear ticket:', error);
     res.status(500).json({ error: 'Error al crear ticket' });
@@ -151,17 +151,14 @@ router.put('/:id', authenticateToken, async (req: any, res: Response) => {
     // Construir query dinámica
     const updates: string[] = [];
     const params: any[] = [];
-    let paramIndex = 1;
 
     if (estado) {
-      updates.push(`estado = $${paramIndex}`);
+      updates.push(`estado = ?`);
       params.push(estado);
-      paramIndex++;
       
       if (estado === 'en_proceso' && !tecnico_asignado) {
-        updates.push(`tecnico_asignado = $${paramIndex}`);
+        updates.push(`tecnico_asignado = ?`);
         params.push(req.user?.id);
-        paramIndex++;
         updates.push(`fecha_asignacion = NOW()`);
       }
       
@@ -171,34 +168,29 @@ router.put('/:id', authenticateToken, async (req: any, res: Response) => {
     }
 
     if (tecnico_asignado) {
-      updates.push(`tecnico_asignado = $${paramIndex}`);
+      updates.push(`tecnico_asignado = ?`);
       params.push(tecnico_asignado);
-      paramIndex++;
       updates.push(`fecha_asignacion = NOW()`);
     }
 
     if (categoria) {
-      updates.push(`categoria = $${paramIndex}`);
+      updates.push(`categoria = ?`);
       params.push(categoria);
-      paramIndex++;
     }
 
     if (subcategoria) {
-      updates.push(`subcategoria = $${paramIndex}`);
+      updates.push(`subcategoria = ?`);
       params.push(subcategoria);
-      paramIndex++;
     }
 
     if (ubicacion) {
-      updates.push(`ubicacion = $${paramIndex}`);
+      updates.push(`ubicacion = ?`);
       params.push(ubicacion);
-      paramIndex++;
     }
 
     if (edificio) {
-      updates.push(`edificio = $${paramIndex}`);
+      updates.push(`edificio = ?`);
       params.push(edificio);
-      paramIndex++;
     }
 
     if (updates.length === 0) {
@@ -206,15 +198,17 @@ router.put('/:id', authenticateToken, async (req: any, res: Response) => {
     }
 
     params.push(id);
-    const query = `UPDATE tickets SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const query = `UPDATE tickets SET ${updates.join(', ')} WHERE id = ?`;
 
-    const result = await pool.query(query, params);
+    await pool.query(query, params);
     
-    if (result.rows.length === 0) {
+    const [updatedTicket] = await pool.query('SELECT * FROM tickets WHERE id = ?', [id]);
+    
+    if (updatedTicket.length === 0) {
       return res.status(404).json({ error: 'Ticket no encontrado' });
     }
 
-    res.json(result.rows[0]);
+    res.json(updatedTicket[0]);
   } catch (error) {
     console.error('Error al actualizar ticket:', error);
     res.status(500).json({ error: 'Error al actualizar ticket' });
@@ -231,14 +225,14 @@ router.post('/:id/comentarios', authenticateToken, async (req: any, res: Respons
       return res.status(400).json({ error: 'El comentario es requerido' });
     }
 
-    const result = await pool.query(
+    const [result] = await pool.query(
       `INSERT INTO comentarios (ticket_id, usuario_id, usuario_nombre, texto) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING *`,
+       VALUES (?, ?, ?, ?)`,
       [id, req.user?.id, req.user?.nombre || 'Usuario', texto]
     );
 
-    res.status(201).json(result.rows[0]);
+    const [newComment] = await pool.query('SELECT * FROM comentarios WHERE id = ?', [result.insertId]);
+    res.status(201).json(newComment[0]);
   } catch (error) {
     console.error('Error al agregar comentario:', error);
     res.status(500).json({ error: 'Error al agregar comentario' });
@@ -250,9 +244,9 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req: any
   try {
     const { id } = req.params;
     
-    const result = await pool.query('DELETE FROM tickets WHERE id = $1 RETURNING *', [id]);
+    const [result] = await pool.query('DELETE FROM tickets WHERE id = ?', [id]);
     
-    if (result.rows.length === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Ticket no encontrado' });
     }
 

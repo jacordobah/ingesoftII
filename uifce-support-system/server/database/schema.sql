@@ -1,32 +1,34 @@
--- Crear base de datos (ejecutar como postgres)
+-- Crear base de datos (ejecutar como root)
 -- CREATE DATABASE uifce_support;
+-- USE uifce_support;
 
 -- Tabla de usuarios
 CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
-    rol VARCHAR(50) NOT NULL CHECK (rol IN ('usuario', 'tecnico', 'admin')),
-    activo BOOLEAN DEFAULT true,
+    rol ENUM('usuario', 'tecnico', 'admin') NOT NULL,
+    activo BOOLEAN DEFAULT TRUE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabla de categorías
 CREATE TABLE IF NOT EXISTS categorias (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) UNIQUE NOT NULL,
     descripcion TEXT
 );
 
 -- Tabla de subcategorías
 CREATE TABLE IF NOT EXISTS subcategorias (
-    id SERIAL PRIMARY KEY,
-    categoria_id INTEGER REFERENCES categorias(id) ON DELETE CASCADE,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoria_id INT NOT NULL,
     nombre VARCHAR(255) NOT NULL,
-    puntaje INTEGER NOT NULL CHECK (puntaje >= 1 AND puntaje <= 10),
+    puntaje INT NOT NULL CHECK (puntaje >= 1 AND puntaje <= 10),
     descripcion TEXT,
-    UNIQUE (categoria_id, nombre)
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_subcategoria (categoria_id, nombre)
 );
 
 -- Tabla de edificios
@@ -36,40 +38,45 @@ CREATE TABLE IF NOT EXISTS edificios (
 
 -- Tabla de ubicaciones
 CREATE TABLE IF NOT EXISTS ubicaciones (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
-    edificio VARCHAR(255) REFERENCES edificios(nombre) ON DELETE CASCADE,
-    puntaje INTEGER NOT NULL CHECK (puntaje >= 1 AND puntaje <= 10),
-    UNIQUE (edificio, nombre)
+    edificio VARCHAR(255) NOT NULL,
+    puntaje INT NOT NULL CHECK (puntaje >= 1 AND puntaje <= 10),
+    FOREIGN KEY (edificio) REFERENCES edificios(nombre) ON DELETE CASCADE,
+    UNIQUE KEY unique_ubicacion (edificio, nombre)
 );
 
 -- Tabla de tickets
 CREATE TABLE IF NOT EXISTS tickets (
     id VARCHAR(20) PRIMARY KEY,
-    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+    usuario_id INT NOT NULL,
     usuario_nombre VARCHAR(255) NOT NULL,
     categoria VARCHAR(255) NOT NULL,
     subcategoria VARCHAR(255) NOT NULL,
     ubicacion VARCHAR(255) NOT NULL,
     edificio VARCHAR(255) NOT NULL,
     descripcion TEXT NOT NULL,
-    prioridad VARCHAR(20) NOT NULL CHECK (prioridad IN ('baja', 'media', 'critica')),
-    estado VARCHAR(20) NOT NULL CHECK (estado IN ('abierto', 'en_proceso', 'cerrado')) DEFAULT 'abierto',
-    tecnico_asignado INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+    prioridad ENUM('baja', 'media', 'critica') NOT NULL,
+    estado ENUM('abierto', 'en_proceso', 'cerrado') NOT NULL DEFAULT 'abierto',
+    tecnico_asignado INT,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_asignacion TIMESTAMP,
-    fecha_resolucion TIMESTAMP,
-    tiempo_estimado INTEGER NOT NULL
+    fecha_asignacion TIMESTAMP NULL,
+    fecha_resolucion TIMESTAMP NULL,
+    tiempo_estimado INT NOT NULL,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (tecnico_asignado) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
 -- Tabla de comentarios
 CREATE TABLE IF NOT EXISTS comentarios (
-    id SERIAL PRIMARY KEY,
-    ticket_id VARCHAR(20) REFERENCES tickets(id) ON DELETE CASCADE,
-    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_id VARCHAR(20) NOT NULL,
+    usuario_id INT NOT NULL,
     usuario_nombre VARCHAR(255) NOT NULL,
     texto TEXT NOT NULL,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
 -- Índices para mejorar rendimiento

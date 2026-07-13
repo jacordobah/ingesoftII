@@ -20,16 +20,16 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Debe usar correo institucional @unal.edu.co' });
     }
 
-    const result = await pool.query(
-      'SELECT * FROM usuarios WHERE email = $1 AND activo = true',
+    const [rows] = await pool.query(
+      'SELECT * FROM usuarios WHERE email = ? AND activo = true',
       [email]
     );
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    const user = result.rows[0];
+    const user = rows[0];
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
@@ -82,12 +82,12 @@ router.post('/register', authenticateToken, async (req: any, res: Response) => {
     }
 
     // Verificar si el usuario ya existe
-    const existingUser = await pool.query(
-      'SELECT id FROM usuarios WHERE email = $1',
+    const [existingUser] = await pool.query(
+      'SELECT id FROM usuarios WHERE email = ?',
       [email]
     );
 
-    if (existingUser.rows.length > 0) {
+    if (existingUser.length > 0) {
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
 
@@ -95,14 +95,19 @@ router.post('/register', authenticateToken, async (req: any, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insertar usuario
-    const result = await pool.query(
-      'INSERT INTO usuarios (email, password, nombre, rol) VALUES ($1, $2, $3, $4) RETURNING id, email, nombre, rol',
+    const [result] = await pool.query(
+      'INSERT INTO usuarios (email, password, nombre, rol) VALUES (?, ?, ?, ?)',
       [email, hashedPassword, nombre, rol]
+    );
+
+    const [newUser] = await pool.query(
+      'SELECT id, email, nombre, rol FROM usuarios WHERE email = ?',
+      [email]
     );
 
     res.status(201).json({
       message: 'Usuario creado exitosamente',
-      user: result.rows[0],
+      user: newUser[0],
     });
   } catch (error) {
     console.error('Error en registro:', error);
