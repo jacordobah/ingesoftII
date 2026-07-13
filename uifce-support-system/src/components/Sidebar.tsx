@@ -20,10 +20,10 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 interface SidebarProps {
-  open?: boolean;
+  // open?: boolean;
 }
 
-export default function Sidebar({ open }: SidebarProps) {
+export default function Sidebar() {
   const { user } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,7 +66,7 @@ export default function Sidebar({ open }: SidebarProps) {
       sx={{
         width: isMobile ? '100%' : 240,
         bgcolor: '#002f6c',
-        color: 'white',
+        color: '#ffffff',
         minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -76,7 +76,7 @@ export default function Sidebar({ open }: SidebarProps) {
       <List sx={{ flexGrow: 1, py: 2 }} role="navigation" aria-label="Menú principal">
         {menuItems.map((item, index) =>
           item.divider ? (
-            <Divider key={`divider-${index}`} sx={{ my: 1, borderColor: 'rgba(255,255,255,0.2)' }} />
+            <Divider key={`divider-${index}`} sx={{ my: 1, borderColor: 'rgba(255,255,255,0.3)' }} />
           ) : (
             <ListItem key={item.path} disablePadding>
               <ListItemButton
@@ -100,7 +100,7 @@ export default function Sidebar({ open }: SidebarProps) {
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: 'white', minWidth: 40 }} aria-hidden="true">
+                <ListItemIcon sx={{ color: '#ffffff', minWidth: 40 }} aria-hidden="true">
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText

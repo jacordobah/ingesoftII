@@ -16,7 +16,7 @@ export const themeOptions: ThemeOptions = {
       main: '#94b43c',
       light: '#b3c56e',
       dark: '#7a9a30',
-      contrastText: '#002f6c',
+      contrastText: '#ffffff',
     },
     secondary: {
       main: '#002f6c',
@@ -50,7 +50,7 @@ export const themeOptions: ThemeOptions = {
     },
     text: {
       primary: '#002f6c',
-      secondary: '#666666',
+      secondary: '#1a1a1a',
     },
   },
   typography: {
@@ -186,9 +186,13 @@ export const themeOptions: ThemeOptions = {
           },
           '& .MuiInputLabel-root': {
             transition: 'all 0.2s ease-in-out',
+            color: '#002f6c',
             '&.Mui-focused': {
               color: '#94b43c',
             },
+          },
+          '& .MuiInputBase-input': {
+            color: '#002f6c',
           },
         },
       },
@@ -206,6 +210,9 @@ export const themeOptions: ThemeOptions = {
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: '#94b43c',
             borderWidth: 2,
+          },
+          '& .MuiSelect-select': {
+            color: '#002f6c',
           },
         },
       },
