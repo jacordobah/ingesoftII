@@ -147,7 +147,7 @@ export default function GestionUbicaciones() {
                     <IconButton
                       onClick={(e) => handleEditarEdificio(e, edificio)}
                       size="small"
-                      sx={{ color: '#94b43c' }}
+                      sx={{ color: '#94b43c', '&:hover': { color: '#7a9a30', backgroundColor: 'rgba(148, 180, 60, 0.1)' } }}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>

@@ -19,9 +19,11 @@ export function ErrorButton({ children, ...props }: ButtonProps) {
       sx={{
         borderColor: '#f44336',
         color: '#f44336',
+        fontWeight: 'bold',
         '&:hover': {
           borderColor: '#d32f2f',
           backgroundColor: 'rgba(244, 67, 54, 0.1)',
+          color: '#d32f2f',
         },
         ...props.sx,
       }}

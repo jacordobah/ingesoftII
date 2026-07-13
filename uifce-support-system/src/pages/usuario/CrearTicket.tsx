@@ -288,7 +288,11 @@ export default function CrearTicket() {
                 fullWidth
                 sx={{
                   bgcolor: '#94b43c',
-                  '&:hover': { bgcolor: '#83a133' },
+                  color: '#ffffff',
+                  '&:hover': { 
+                    bgcolor: '#83a133',
+                    color: '#ffffff',
+                  },
                   py: { xs: 1, sm: 1.5 },
                   fontWeight: 'bold',
                   textTransform: 'uppercase',

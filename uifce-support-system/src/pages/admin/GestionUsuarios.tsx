@@ -120,8 +120,12 @@ export default function GestionUsuarios() {
               onClick={handleCrearUsuario}
               sx={{
                 bgcolor: '#94b43c',
-                color: '#002f6c',
-                '&:hover': { bgcolor: '#7a9a30' },
+                color: '#ffffff',
+                fontWeight: 'bold',
+                '&:hover': { 
+                  bgcolor: '#7a9a30',
+                  color: '#ffffff',
+                },
                 width: { xs: '100%', sm: 'auto' },
               }}
             >

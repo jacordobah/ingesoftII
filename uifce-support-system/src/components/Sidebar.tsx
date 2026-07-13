@@ -1,4 +1,12 @@
-import { Box, List, ListItem, ListItemButton, ListItemText, useMediaQuery, useTheme, ListItemIcon, Divider } from '@mui/material';
+import Box from '@mui/material/Box';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Divider from '@mui/material/Divider';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import AddIcon from '@mui/icons-material/Add';
@@ -100,7 +108,8 @@ export default function Sidebar({ open }: SidebarProps) {
                   sx={{
                     '& .MuiTypography-root': {
                       fontSize: '0.95rem',
-                      fontWeight: location.pathname === item.path ? 600 : 400,
+                      fontWeight: location.pathname === item.path ? 700 : 500,
+                      color: 'white',
                     },
                   }}
                 />

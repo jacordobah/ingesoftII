@@ -128,7 +128,12 @@ export default function Login() {
               size="large"
               sx={{
                 bgcolor: '#002f6c',
-                '&:hover': { bgcolor: '#001f4d' },
+                color: '#ffffff',
+                fontWeight: 'bold',
+                '&:hover': { 
+                  bgcolor: '#001f4d',
+                  color: '#ffffff',
+                },
                 py: 1.5,
               }}
             >

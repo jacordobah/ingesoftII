@@ -1,12 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, CircularProgress, Box } from '@mui/material';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { theme } from './theme';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import { CircularProgress, Box } from '@mui/material';
 
 // Lazy loading de componentes para code splitting
 const Login = lazy(() => import('./pages/auth/Login'));

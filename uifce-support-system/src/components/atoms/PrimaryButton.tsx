@@ -18,10 +18,11 @@ export function PrimaryButton({ children, ...props }: ButtonProps) {
       {...props}
       sx={{
         backgroundColor: '#94b43c',
-        color: '#002f6c',
+        color: '#ffffff',
         fontWeight: 'bold',
         '&:hover': {
           backgroundColor: '#7a9a30',
+          color: '#ffffff',
         },
         ...props.sx,
       }}

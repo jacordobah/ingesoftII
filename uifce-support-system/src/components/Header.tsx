@@ -40,33 +40,12 @@ export default function Header({ onMenuClick, showMenuButton = false }: HeaderPr
 
         {/* Logo y Título */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexGrow: 1 }}>
-          <Box
-            sx={{
-              width: { xs: 28, sm: 36 },
-              height: { xs: 28, sm: 36 },
-              bgcolor: 'white',
-              color: '#002f6c',
-              borderRadius: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: { xs: '0.7rem', sm: '0.875rem' },
-              fontWeight: 'bold',
-            }}
-          >
-            UNAL
-          </Box>
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-            <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>
+          <Box>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.875rem', sm: '1rem' } }}>
               UIFCE - Soporte Técnico
             </Typography>
-            <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.75rem' }}>
+            <Typography variant="caption" sx={{ opacity: 0.9, fontSize: { xs: '0.7rem', sm: '0.75rem' }, display: { xs: 'none', sm: 'block' } }}>
               Facultad de Ciencias Económicas
-            </Typography>
-          </Box>
-          <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-            <Typography variant="body2" component="div" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>
-              UIFCE
             </Typography>
           </Box>
         </Box>
@@ -87,15 +66,16 @@ export default function Header({ onMenuClick, showMenuButton = false }: HeaderPr
               onClick={handleLogout}
               sx={{
                 ml: { xs: 0, sm: 1 },
-                color: 'white',
-                borderColor: 'white',
+                color: '#ffffff',
+                borderColor: '#ffffff',
                 fontWeight: 'bold',
                 fontSize: { xs: '0.7rem', sm: '0.875rem' },
                 px: { xs: 1, sm: 2 },
                 py: { xs: 0.5, sm: 0.75 },
                 '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
-                  borderColor: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  borderColor: '#ffffff',
+                  color: '#ffffff',
                 },
               }}
             >
