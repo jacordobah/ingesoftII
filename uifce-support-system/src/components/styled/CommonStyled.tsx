@@ -1,5 +1,5 @@
 import { styled } from '@mui/material/styles';
-import { Paper, Box, Typography, Button, Card } from '@mui/material';
+import { Paper, Box, Typography, Card } from '@mui/material';
 
 /**
  * Styled Components Reutilizables
@@ -56,36 +56,6 @@ export const PageSubtitle = styled(Typography)(({ theme }) => ({
   },
 }));
 
-// Botón primario institucional
-export const PrimaryButton = styled(Button)(() => ({
-  backgroundColor: '#94b43c',
-  color: '#002f6c',
-  fontWeight: 'bold',
-  '&:hover': {
-    backgroundColor: '#7a9a30',
-  },
-}));
-
-// Botón secundario
-export const SecondaryButton = styled(Button)({
-  color: '#94b43c',
-  borderColor: '#94b43c',
-  '&:hover': {
-    borderColor: '#7a9a30',
-    backgroundColor: 'rgba(148, 180, 60, 0.1)',
-  },
-});
-
-// Botón de error
-export const ErrorButton = styled(Button)({
-  borderColor: '#f44336',
-  color: '#f44336',
-  '&:hover': {
-    borderColor: '#d32f2f',
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
-  },
-});
-
 // Card estándar
 export const StyledCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(2),
@@ -119,48 +89,4 @@ export const FilterBox = styled(Box)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     flexDirection: 'column',
   },
-}));
-
-// Chip de estado
-export const StatusChip = styled('div', {
-  shouldForwardProp: (prop) => prop !== 'status',
-})<{ status: 'abierto' | 'en_proceso' | 'cerrado' }>(({ status }) => ({
-  padding: '4px 12px',
-  borderRadius: '16px',
-  fontSize: '0.875rem',
-  fontWeight: 'bold',
-  ...(status === 'abierto' && {
-    backgroundColor: '#eff6ff',
-    color: '#1e40af',
-  }),
-  ...(status === 'en_proceso' && {
-    backgroundColor: '#fffbeb',
-    color: '#92400e',
-  }),
-  ...(status === 'cerrado' && {
-    backgroundColor: '#f0fdf4',
-    color: '#166534',
-  }),
-}));
-
-// Chip de prioridad
-export const PriorityChip = styled('div', {
-  shouldForwardProp: (prop) => prop !== 'priority',
-})<{ priority: 'critica' | 'media' | 'baja' }>(({ priority }) => ({
-  padding: '4px 12px',
-  borderRadius: '16px',
-  fontSize: '0.875rem',
-  fontWeight: 'bold',
-  ...(priority === 'critica' && {
-    backgroundColor: '#fee2e2',
-    color: '#991b1b',
-  }),
-  ...(priority === 'media' && {
-    backgroundColor: '#fef3c7',
-    color: '#92400e',
-  }),
-  ...(priority === 'baja' && {
-    backgroundColor: '#f3f4f6',
-    color: '#374151',
-  }),
 }));
