@@ -5,6 +5,7 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/ap
 export const ENDPOINTS = {
   auth: {
     login: `${API_URL}/auth/login`,
+    me: `${API_URL}/auth/me`,
     register: `${API_URL}/auth/register`,
   },
   usuarios: {
@@ -74,6 +75,10 @@ export async function apiRequest<T>(
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Error en la petición' }));
     throw new Error(error.error || error.message || 'Error en la petición');
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json();

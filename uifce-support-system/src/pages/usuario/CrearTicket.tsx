@@ -106,7 +106,7 @@ export default function CrearTicket() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
@@ -125,7 +125,7 @@ export default function CrearTicket() {
     else if (cantidadNum > 30) puntajeCantidad = 30;
 
     // RF-02, RF-03, RF-04, RF-05, RF-06: Crear ticket
-    const nuevoTicket = crearTicket({
+    const nuevoTicket = await crearTicket({
       categoria: categoriaSeleccionada?.nombre || '',
       subcategoria: formData.subcategoria,
       ubicacion: `${formData.edificio} - ${formData.ubicacion}`,

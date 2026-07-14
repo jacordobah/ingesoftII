@@ -1,100 +1,217 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { User, Ticket, Auditoria, TicketStatus } from '../types';
-import { mockTickets, mockAuditoria, mockUsers } from '../data/mockData';
-import { generateTicketId, calcularPrioridad, calcularTiempoRespuesta, calcularPuntajeTotal } from '../utils/ticketUtils';
+import type { Auditoria, Comentario, Ticket, TicketStatus, User } from '../types';
+import { mockAuditoria, mockTickets, mockUsers } from '../data/mockData';
+import { ENDPOINTS, apiRequest } from '../config/api';
+import {
+  calcularPrioridad,
+  calcularTiempoRespuesta,
+  calcularPuntajeTotal,
+  generateTicketId,
+} from '../utils/ticketUtils';
+
+interface CrearTicketData {
+  categoria: string;
+  subcategoria: string;
+  ubicacion: string;
+  cantidadEquipos: string;
+  telefonoContacto: string;
+  descripcion: string;
+  puntajeSubcategoria: number;
+  puntajeUbicacion: number;
+  puntajeCantidad: number;
+}
+
+interface AuthResponse {
+  token: string;
+  user: User;
+}
 
 interface AppContextType {
-  // Estado
   user: User | null;
   tickets: Ticket[];
   auditoria: Auditoria[];
   users: User[];
   isAuthenticated: boolean;
 
-  // Acciones de autenticación (RF-01)
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 
-  // Acciones de tickets (RF-02, RF-03, RF-04, RF-05, RF-06)
-  crearTicket: (data: {
-    categoria: string;
-    subcategoria: string;
-    ubicacion: string;
-    cantidadEquipos: string;
-    telefonoContacto: string;
-    descripcion: string;
-    puntajeSubcategoria: number;
-    puntajeUbicacion: number;
-    puntajeCantidad: number;
-  }) => Ticket;
+  crearTicket: (data: CrearTicketData) => Promise<Ticket>;
+  asignarTicket: (ticketId: string, tecnicoId: string) => Promise<void>;
+  reasignarTicket: (ticketId: string, nuevoTecnicoId: string) => Promise<void>;
+  actualizarEstadoTicket: (ticketId: string, nuevoEstado: TicketStatus) => Promise<void>;
+  agregarComentario: (ticketId: string, contenido: string) => Promise<void>;
+  actualizarTicketCompleto: (
+    ticketId: string,
+    nuevoEstado: TicketStatus,
+    nuevoTecnico: string,
+    comentario: string
+  ) => Promise<void>;
+  actualizarCategoriaTicket: (
+    ticketId: string,
+    nuevaCategoria: string,
+    nuevaSubcategoria: string,
+    nuevaUbicacion: string,
+    puntajeSubcategoria: number,
+    puntajeUbicacion: number
+  ) => Promise<void>;
 
-  // Acciones de gestión de tickets (RF-11, RF-12, RF-13, RF-14)
-  asignarTicket: (ticketId: string, tecnicoId: string) => void;
-  reasignarTicket: (ticketId: string, nuevoTecnicoId: string) => void;
-  actualizarEstadoTicket: (ticketId: string, nuevoEstado: TicketStatus) => void;
-  agregarComentario: (ticketId: string, contenido: string) => void;
-  actualizarTicketCompleto: (ticketId: string, nuevoEstado: TicketStatus, nuevoTecnico: string, comentario: string) => void;
-  actualizarCategoriaTicket: (ticketId: string, nuevaCategoria: string, nuevaSubcategoria: string, nuevaUbicacion: string, puntajeSubcategoria: number, puntajeUbicacion: number) => void;
-
-  // Utilidades
   getTicketsByUsuario: (usuarioId: string) => Ticket[];
   getTicketsByTecnico: (tecnicoId: string) => Ticket[];
 }
 
+const TOKEN_STORAGE_KEY = 'token';
+const USER_STORAGE_KEY = 'user';
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+function getStoredUser(): User | null {
+  try {
+    const rawUser = localStorage.getItem(USER_STORAGE_KEY);
+    return rawUser ? (JSON.parse(rawUser) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeTicket(ticket: Ticket): Ticket {
+  return {
+    ...ticket,
+    fechaCreacion: new Date(ticket.fechaCreacion),
+    fechaActualizacion: ticket.fechaActualizacion ? new Date(ticket.fechaActualizacion) : undefined,
+    fechaResolucion: ticket.fechaResolucion ? new Date(ticket.fechaResolucion) : undefined,
+    comentarios: ticket.comentarios.map((comentario) => ({
+      ...comentario,
+      fecha: new Date(comentario.fecha),
+    })),
+  };
+}
+
+function normalizeAuditoria(record: Auditoria): Auditoria {
+  return {
+    ...record,
+    fecha: new Date(record.fecha),
+  };
+}
+
+function warnApiFallback(action: string, error: unknown) {
+  console.warn(`API no disponible para ${action}; usando datos locales.`, error);
+}
+
+function createAuditRecord(
+  ticketId: string,
+  accion: Auditoria['accion'],
+  actor: User,
+  detalles: Auditoria['detalles']
+): Auditoria {
+  return {
+    id: `AUD-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    ticketId,
+    accion,
+    usuario: actor.nombre,
+    usuarioRol: actor.rol,
+    fecha: new Date(),
+    detalles,
+  };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
-  const [auditoria, setAuditoria] = useState<Auditoria[]>(mockAuditoria);
-  const [users] = useState<User[]>(mockUsers);
+  const [user, setUser] = useState<User | null>(getStoredUser);
+  const [tickets, setTickets] = useState<Ticket[]>(mockTickets.map(normalizeTicket));
+  const [auditoria, setAuditoria] = useState<Auditoria[]>(mockAuditoria.map(normalizeAuditoria));
+  const [users, setUsers] = useState<User[]>(mockUsers);
 
   const isAuthenticated = user !== null;
 
-  // RF-01: Simular autenticación OAuth con correo institucional
-  const login = (email: string, _password: string): boolean => {
-    // Validar que sea correo institucional UNAL
-    if (!email.endsWith('@unal.edu.co')) {
-      return false;
-    }
+  const refreshData = useCallback(async () => {
+    if (!localStorage.getItem(TOKEN_STORAGE_KEY)) return;
 
-    // Buscar usuario en mock data
-    const foundUser = mockUsers.find((u) => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
+    try {
+      const [apiTickets, apiUsers, apiAuditoria] = await Promise.all([
+        apiRequest<Ticket[]>(ENDPOINTS.tickets.getAll),
+        apiRequest<User[]>(ENDPOINTS.usuarios.getAll),
+        apiRequest<Auditoria[]>(ENDPOINTS.auditoria.getAll),
+      ]);
+
+      setTickets(apiTickets.map(normalizeTicket));
+      setUsers(apiUsers);
+      setAuditoria(apiAuditoria.map(normalizeAuditoria));
+    } catch (error) {
+      warnApiFallback('sincronizacion inicial', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (!token) return;
+
+    void apiRequest<User>(ENDPOINTS.auth.me)
+      .then((apiUser) => {
+        setUser(apiUser);
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(apiUser));
+      })
+      .catch((error) => warnApiFallback('sesion', error));
+
+    void refreshData();
+  }, [refreshData]);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    if (!email.endsWith('@unal.edu.co')) return false;
+
+    try {
+      const session = await apiRequest<AuthResponse>(ENDPOINTS.auth.login, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+
+      localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(session.user));
+      setUser(session.user);
+      await refreshData();
       return true;
+    } catch (error) {
+      warnApiFallback('login', error);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
     }
 
-    // Si no existe, crear usuario temporal
-    const newUser: User = {
-      id: `USR-${Date.now()}`,
-      nombre: email.split('@')[0],
-      email,
-      rol: 'usuario',
-    };
-    setUser(newUser);
+    const foundUser = mockUsers.find((mockUser) => mockUser.email === email);
+    const localUser: User =
+      foundUser ?? {
+        id: `USR-${Date.now()}`,
+        nombre: email.split('@')[0],
+        email,
+        rol: 'usuario',
+      };
+
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(localUser));
+    setUser(localUser);
     return true;
   };
 
   const logout = () => {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);
   };
 
-  // RF-02, RF-03, RF-04, RF-05, RF-06: Crear ticket
-  const crearTicket = (data: {
-    categoria: string;
-    subcategoria: string;
-    ubicacion: string;
-    cantidadEquipos: string;
-    telefonoContacto: string;
-    descripcion: string;
-    puntajeSubcategoria: number;
-    puntajeUbicacion: number;
-    puntajeCantidad: number;
-  }): Ticket => {
+  const crearTicket = async (data: CrearTicketData): Promise<Ticket> => {
     if (!user) {
       throw new Error('Usuario no autenticado');
+    }
+
+    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
+      try {
+        const ticket = await apiRequest<Ticket>(ENDPOINTS.tickets.create, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        });
+        const normalizedTicket = normalizeTicket(ticket);
+        setTickets((currentTickets) => [...currentTickets, normalizedTicket]);
+        void refreshData();
+        return normalizedTicket;
+      } catch (error) {
+        warnApiFallback('crear ticket', error);
+      }
     }
 
     const puntajeTotal = calcularPuntajeTotal(
@@ -102,9 +219,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       data.puntajeUbicacion,
       data.puntajeCantidad
     );
-
-    const prioridad = calcularPrioridad(puntajeTotal);
-    const tiempoEstimado = calcularTiempoRespuesta(puntajeTotal);
 
     const nuevoTicket: Ticket = {
       id: generateTicketId(),
@@ -118,127 +232,144 @@ export function AppProvider({ children }: { children: ReactNode }) {
       telefonoContacto: data.telefonoContacto,
       descripcion: data.descripcion,
       puntajeTotal,
-      prioridad,
-      tiempoEstimado,
+      prioridad: calcularPrioridad(puntajeTotal),
+      tiempoEstimado: calcularTiempoRespuesta(puntajeTotal),
       estado: 'abierto',
       fechaCreacion: new Date(),
       comentarios: [],
     };
 
-    setTickets([...tickets, nuevoTicket]);
-
-    // RF-25: Registro de auditoría - Creación de ticket
-    const nuevoAuditoria: Auditoria = {
-      id: `AUD-${Date.now()}`,
-      ticketId: nuevoTicket.id,
-      accion: 'creacion_ticket',
-      usuario: user.nombre,
-      usuarioRol: user.rol,
-      fecha: new Date(),
-      detalles: {},
-    };
-    setAuditoria([...auditoria, nuevoAuditoria]);
+    setTickets((currentTickets) => [...currentTickets, nuevoTicket]);
+    setAuditoria((currentAuditoria) => [
+      ...currentAuditoria,
+      createAuditRecord(nuevoTicket.id, 'creacion_ticket', user, {}),
+    ]);
 
     return nuevoTicket;
   };
 
-  // RF-11: Auto-asignación de ticket por técnico
-  const asignarTicket = (ticketId: string, tecnicoId: string) => {
+  async function actualizarTicketCompleto(
+    ticketId: string,
+    nuevoEstado: TicketStatus,
+    nuevoTecnico: string,
+    comentario: string
+  ) {
     if (!user) return;
 
-    setTickets(
-      tickets.map((t) =>
-        t.id === ticketId
-          ? { ...t, tecnicoAsignado: tecnicoId, estado: 'en_proceso' as TicketStatus, fechaActualizacion: new Date() }
-          : t
-      )
-    );
+    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
+      try {
+        const updatedTicket = await apiRequest<Ticket>(ENDPOINTS.tickets.update(ticketId), {
+          method: 'PUT',
+          body: JSON.stringify({
+            estado: nuevoEstado,
+            tecnicoAsignado: nuevoTecnico,
+            comentario,
+          }),
+        });
+        const normalizedTicket = normalizeTicket(updatedTicket);
+        setTickets((currentTickets) =>
+          currentTickets.map((ticket) => (ticket.id === ticketId ? normalizedTicket : ticket))
+        );
+        void refreshData();
+        return;
+      } catch (error) {
+        warnApiFallback('actualizar ticket', error);
+      }
+    }
 
-    // RF-26: Registro de auditoría - Asignación de ticket
-    const nuevoAuditoria: Auditoria = {
-      id: `AUD-${Date.now()}`,
-      ticketId,
-      accion: 'asignacion_ticket',
-      usuario: user.nombre,
-      usuarioRol: user.rol,
-      fecha: new Date(),
-      detalles: { tecnicoNuevo: tecnicoId },
-    };
-    setAuditoria([...auditoria, nuevoAuditoria]);
-  };
-
-  // RF-12: Reasignación de ticket por admin
-  const reasignarTicket = (ticketId: string, nuevoTecnicoId: string) => {
-    if (!user) return;
-
-    const ticket = tickets.find((t) => t.id === ticketId);
+    const ticket = tickets.find((item) => item.id === ticketId);
     if (!ticket) return;
 
-    setTickets(
-      tickets.map((t) =>
-        t.id === ticketId
-          ? { ...t, tecnicoAsignado: nuevoTecnicoId, fechaActualizacion: new Date() }
-          : t
-      )
-    );
+    const nuevosComentarios = [...ticket.comentarios];
+    if (comentario && comentario.trim()) {
+      nuevosComentarios.push({
+        id: `COM-${Date.now()}`,
+        ticketId,
+        autor: user.nombre,
+        autorRol: user.rol,
+        contenido: comentario,
+        fecha: new Date(),
+      });
+    }
 
-    // RF-27: Registro de auditoría - Reasignación de ticket
-    const nuevoAuditoria: Auditoria = {
-      id: `AUD-${Date.now()}`,
-      ticketId,
-      accion: 'reasignacion_ticket',
-      usuario: user.nombre,
-      usuarioRol: user.rol,
-      fecha: new Date(),
-      detalles: {
-        tecnicoAnterior: ticket.tecnicoAsignado,
-        tecnicoNuevo: nuevoTecnicoId,
-      },
-    };
-    setAuditoria([...auditoria, nuevoAuditoria]);
-  };
-
-  // RF-13: Actualización de estado del ticket
-  const actualizarEstadoTicket = (ticketId: string, nuevoEstado: TicketStatus) => {
-    if (!user) return;
-
-    const ticket = tickets.find((t) => t.id === ticketId);
-    if (!ticket) return;
-
-    setTickets(
-      tickets.map((t) =>
-        t.id === ticketId
+    setTickets((currentTickets) =>
+      currentTickets.map((item) =>
+        item.id === ticketId
           ? {
-              ...t,
+              ...item,
               estado: nuevoEstado,
+              tecnicoAsignado: nuevoTecnico || item.tecnicoAsignado,
+              comentarios: nuevosComentarios,
               fechaActualizacion: new Date(),
-              fechaResolucion: nuevoEstado === 'cerrado' ? new Date() : t.fechaResolucion,
+              fechaResolucion: nuevoEstado === 'cerrado' ? new Date() : item.fechaResolucion,
             }
-          : t
+          : item
       )
     );
 
-    // RF-28: Registro de auditoría - Cambio de estado
-    const nuevoAuditoria: Auditoria = {
-      id: `AUD-${Date.now()}`,
-      ticketId,
-      accion: 'cambio_estado',
-      usuario: user.nombre,
-      usuarioRol: user.rol,
-      fecha: new Date(),
-      detalles: {
-        estadoAnterior: ticket.estado,
-        estadoNuevo: nuevoEstado,
-      },
-    };
-    setAuditoria([...auditoria, nuevoAuditoria]);
+    const auditRecords: Auditoria[] = [];
+    if (ticket.estado !== nuevoEstado) {
+      auditRecords.push(
+        createAuditRecord(
+          ticketId,
+          nuevoEstado === 'cerrado' ? 'cierre_ticket' : 'cambio_estado',
+          user,
+          { estadoAnterior: ticket.estado, estadoNuevo: nuevoEstado }
+        )
+      );
+    }
+
+    if (ticket.tecnicoAsignado !== nuevoTecnico && nuevoTecnico) {
+      auditRecords.push(
+        createAuditRecord(ticketId, ticket.tecnicoAsignado ? 'reasignacion_ticket' : 'asignacion_ticket', user, {
+          tecnicoAnterior: ticket.tecnicoAsignado,
+          tecnicoNuevo: nuevoTecnico,
+        })
+      );
+    }
+
+    if (comentario && comentario.trim()) {
+      auditRecords.push(createAuditRecord(ticketId, 'inclusion_comentario', user, { comentario }));
+    }
+
+    if (auditRecords.length > 0) {
+      setAuditoria((currentAuditoria) => [...currentAuditoria, ...auditRecords]);
+    }
+  }
+
+  const asignarTicket = async (ticketId: string, tecnicoId: string) => {
+    await actualizarTicketCompleto(ticketId, 'en_proceso', tecnicoId, '');
   };
 
-  // RF-14: Registro de comentarios de seguimiento
-  const agregarComentario = (ticketId: string, contenido: string) => {
+  const reasignarTicket = async (ticketId: string, nuevoTecnicoId: string) => {
+    const ticket = tickets.find((item) => item.id === ticketId);
+    if (!ticket) return;
+    await actualizarTicketCompleto(ticketId, ticket.estado, nuevoTecnicoId, '');
+  };
+
+  const actualizarEstadoTicket = async (ticketId: string, nuevoEstado: TicketStatus) => {
+    const ticket = tickets.find((item) => item.id === ticketId);
+    if (!ticket) return;
+    await actualizarTicketCompleto(ticketId, nuevoEstado, ticket.tecnicoAsignado || '', '');
+  };
+
+  const agregarComentario = async (ticketId: string, contenido: string) => {
     if (!user) return;
 
-    const nuevoComentario = {
+    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
+      try {
+        await apiRequest<Comentario>(ENDPOINTS.tickets.addComment(ticketId), {
+          method: 'POST',
+          body: JSON.stringify({ contenido }),
+        });
+        void refreshData();
+        return;
+      } catch (error) {
+        warnApiFallback('agregar comentario', error);
+      }
+    }
+
+    const nuevoComentario: Comentario = {
       id: `COM-${Date.now()}`,
       ticketId,
       autor: user.nombre,
@@ -247,128 +378,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fecha: new Date(),
     };
 
-    setTickets(
-      tickets.map((t) =>
-        t.id === ticketId
-          ? { ...t, comentarios: [...t.comentarios, nuevoComentario], fechaActualizacion: new Date() }
-          : t
+    setTickets((currentTickets) =>
+      currentTickets.map((ticket) =>
+        ticket.id === ticketId
+          ? { ...ticket, comentarios: [...ticket.comentarios, nuevoComentario], fechaActualizacion: new Date() }
+          : ticket
       )
     );
-
-    // RF-30: Registro de auditoría - Inclusión de comentarios
-    const nuevoAuditoria: Auditoria = {
-      id: `AUD-${Date.now()}`,
-      ticketId,
-      accion: 'inclusion_comentario',
-      usuario: user.nombre,
-      usuarioRol: user.rol,
-      fecha: new Date(),
-      detalles: { comentario: contenido },
-    };
-    setAuditoria([...auditoria, nuevoAuditoria]);
+    setAuditoria((currentAuditoria) => [
+      ...currentAuditoria,
+      createAuditRecord(ticketId, 'inclusion_comentario', user, { comentario: contenido }),
+    ]);
   };
 
-  // Actualizar ticket completo (estado, técnico y comentario)
-  const actualizarTicketCompleto = (ticketId: string, nuevoEstado: TicketStatus, nuevoTecnico: string, comentario: string) => {
-    if (!user) return;
-
-    const ticket = tickets.find((t) => t.id === ticketId);
-    if (!ticket) return;
-
-    // Agregar comentario si se proporciona
-    let nuevosComentarios = ticket.comentarios;
-    if (comentario && comentario.trim()) {
-      const nuevoComentario = {
-        id: `COM-${Date.now()}`,
-        ticketId,
-        autor: user.nombre,
-        autorRol: user.rol,
-        contenido: comentario,
-        fecha: new Date(),
-      };
-      nuevosComentarios = [...ticket.comentarios, nuevoComentario];
-    }
-
-    setTickets(
-      tickets.map((t) =>
-        t.id === ticketId
-          ? {
-              ...t,
-              estado: nuevoEstado,
-              tecnicoAsignado: nuevoTecnico || t.tecnicoAsignado,
-              comentarios: nuevosComentarios,
-              fechaActualizacion: new Date(),
-              fechaResolucion: nuevoEstado === 'cerrado' ? new Date() : t.fechaResolucion,
-            }
-          : t
-      )
-    );
-
-    // Registro de auditoría - Cambio de estado
-    if (ticket.estado !== nuevoEstado) {
-      const nuevoAuditoria: Auditoria = {
-        id: `AUD-${Date.now()}`,
-        ticketId,
-        accion: 'cambio_estado',
-        usuario: user.nombre,
-        usuarioRol: user.rol,
-        fecha: new Date(),
-        detalles: {
-          estadoAnterior: ticket.estado,
-          estadoNuevo: nuevoEstado,
-        },
-      };
-      setAuditoria([...auditoria, nuevoAuditoria]);
-    }
-
-    // Registro de auditoría - Reasignación si cambió el técnico
-    if (ticket.tecnicoAsignado !== nuevoTecnico && nuevoTecnico) {
-      const nuevoAuditoria: Auditoria = {
-        id: `AUD-${Date.now()}`,
-        ticketId,
-        accion: 'reasignacion_ticket',
-        usuario: user.nombre,
-        usuarioRol: user.rol,
-        fecha: new Date(),
-        detalles: {
-          tecnicoAnterior: ticket.tecnicoAsignado,
-          tecnicoNuevo: nuevoTecnico,
-        },
-      };
-      setAuditoria([...auditoria, nuevoAuditoria]);
-    }
-
-    // Registro de auditoría - Comentario si se agregó
-    if (comentario && comentario.trim()) {
-      const nuevoAuditoria: Auditoria = {
-        id: `AUD-${Date.now()}`,
-        ticketId,
-        accion: 'inclusion_comentario',
-        usuario: user.nombre,
-        usuarioRol: user.rol,
-        fecha: new Date(),
-        detalles: { comentario },
-      };
-      setAuditoria([...auditoria, nuevoAuditoria]);
-    }
-
-    // Registro de auditoría - Cierre de ticket
-    if (nuevoEstado === 'cerrado' && ticket.estado !== 'cerrado') {
-      const nuevoAuditoria: Auditoria = {
-        id: `AUD-${Date.now()}`,
-        ticketId,
-        accion: 'cierre_ticket',
-        usuario: user.nombre,
-        usuarioRol: user.rol,
-        fecha: new Date(),
-        detalles: { comentario },
-      };
-      setAuditoria([...auditoria, nuevoAuditoria]);
-    }
-  };
-
-  // Actualizar categoría, subcategoría y ubicación de un ticket (recalculando puntajes y tiempos)
-  const actualizarCategoriaTicket = (
+  const actualizarCategoriaTicket = async (
     ticketId: string,
     nuevaCategoria: string,
     nuevaSubcategoria: string,
@@ -378,67 +401,76 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ) => {
     if (!user) return;
 
-    const ticket = tickets.find((t) => t.id === ticketId);
+    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
+      try {
+        const updatedTicket = await apiRequest<Ticket>(ENDPOINTS.tickets.update(ticketId), {
+          method: 'PUT',
+          body: JSON.stringify({
+            categoria: nuevaCategoria,
+            subcategoria: nuevaSubcategoria,
+            ubicacion: nuevaUbicacion,
+            puntajeSubcategoria,
+            puntajeUbicacion,
+          }),
+        });
+        const normalizedTicket = normalizeTicket(updatedTicket);
+        setTickets((currentTickets) =>
+          currentTickets.map((ticket) => (ticket.id === ticketId ? normalizedTicket : ticket))
+        );
+        void refreshData();
+        return;
+      } catch (error) {
+        warnApiFallback('actualizar categoria', error);
+      }
+    }
+
+    const ticket = tickets.find((item) => item.id === ticketId);
     if (!ticket) return;
 
-    // Obtener el puntaje de cantidad original
-    const cantidadEquipos = ticket.cantidadEquipos;
     let puntajeCantidad = 0;
-    if (cantidadEquipos === '1 a 3 equipos') puntajeCantidad = 5;
-    else if (cantidadEquipos === '4 a 10 equipos') puntajeCantidad = 10;
-    else if (cantidadEquipos === '11 a 30 equipos') puntajeCantidad = 20;
-    else if (cantidadEquipos === 'Más de 30 equipos') puntajeCantidad = 30;
+    const cantidadEquipos = Number(ticket.cantidadEquipos);
+    if (cantidadEquipos >= 1 && cantidadEquipos <= 3) puntajeCantidad = 5;
+    else if (cantidadEquipos >= 4 && cantidadEquipos <= 14) puntajeCantidad = 12;
+    else if (cantidadEquipos >= 15 && cantidadEquipos <= 30) puntajeCantidad = 20;
+    else if (cantidadEquipos > 30) puntajeCantidad = 30;
 
-    const puntajeTotalFinal = calcularPuntajeTotal(
-      puntajeSubcategoria,
-      puntajeUbicacion,
-      puntajeCantidad
-    );
+    const puntajeTotal = calcularPuntajeTotal(puntajeSubcategoria, puntajeUbicacion, puntajeCantidad);
 
-    const nuevaPrioridad = calcularPrioridad(puntajeTotalFinal);
-    const nuevoTiempoEstimado = calcularTiempoRespuesta(puntajeTotalFinal);
-
-    setTickets(
-      tickets.map((t) =>
-        t.id === ticketId
+    setTickets((currentTickets) =>
+      currentTickets.map((item) =>
+        item.id === ticketId
           ? {
-              ...t,
+              ...item,
               categoria: nuevaCategoria,
               subcategoria: nuevaSubcategoria,
               ubicacion: nuevaUbicacion,
-              puntajeTotal: puntajeTotalFinal,
-              prioridad: nuevaPrioridad,
-              tiempoEstimado: nuevoTiempoEstimado,
+              puntajeTotal,
+              prioridad: calcularPrioridad(puntajeTotal),
+              tiempoEstimado: calcularTiempoRespuesta(puntajeTotal),
               fechaActualizacion: new Date(),
             }
-          : t
+          : item
       )
     );
 
-    // Registro de auditoría - Modificación de categoría
-    const nuevoAuditoria: Auditoria = {
-      id: `AUD-${Date.now()}`,
-      ticketId,
-      accion: 'modificacion_categoria',
-      usuario: user.nombre,
-      usuarioRol: user.rol,
-      fecha: new Date(),
-      detalles: {
+    setAuditoria((currentAuditoria) => [
+      ...currentAuditoria,
+      createAuditRecord(ticketId, 'modificacion_categoria', user, {
         categoriaAnterior: ticket.categoria,
         categoriaNueva: nuevaCategoria,
-      },
-    };
-    setAuditoria([...auditoria, nuevoAuditoria]);
+      }),
+    ]);
   };
 
-  // Utilidades
-  const getTicketsByUsuario = (usuarioId: string) => {
-    return tickets.filter((t) => t.usuarioId === usuarioId);
-  };
+  const getTicketsByUsuario = useCallback(
+    (usuarioId: string) => tickets.filter((ticket) => ticket.usuarioId === usuarioId),
+    [tickets]
+  );
 
-  const getTicketsByTecnico = (tecnicoId: string) => {
-    return tickets.filter((t) => t.tecnicoAsignado === tecnicoId);
-  };
+  const getTicketsByTecnico = useCallback(
+    (tecnicoId: string) => tickets.filter((ticket) => ticket.tecnicoAsignado === tecnicoId),
+    [tickets]
+  );
 
   return (
     <AppContext.Provider
