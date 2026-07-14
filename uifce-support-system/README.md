@@ -1,75 +1,123 @@
-# React + TypeScript + Vite
+# UIFCE Support System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de soporte técnico para UIFCE con backend en Express + TypeScript, base de datos MySQL y frontend en React + TypeScript.
 
-Currently, two official plugins are available:
+## Estructura del Proyecto
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `server/` - Backend Express + TypeScript
+  - `src/` - Código fuente del backend
+  - `database/` - Esquema y migraciones de base de datos
+  - `package.json` - Dependencias del backend
+- `src/` - Frontend React + TypeScript
+  - `components/` - Componentes de UI
+  - `pages/` - Páginas de la aplicación
+  - `contexts/` - Contextos de React
+  - `hooks/` - Hooks personalizados
+  - `utils/` - Utilidades
+  - `types/` - Definiciones de tipos TypeScript
 
-## React Compiler
+## Configuración
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Requisitos Previos
 
-## Expanding the ESLint configuration
+- Node.js (v18 o superior)
+- MySQL (v8.0 o superior)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Instalación del Backend
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd server
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Instalación del Frontend
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
 ```
+
+### Configuración de Base de Datos
+
+1. Crear base de datos MySQL:
+```sql
+CREATE DATABASE uifce_support;
+```
+
+2. Configurar variables de entorno:
+```bash
+cd server
+cp .env.example .env
+# Editar .env con tus credenciales de MySQL
+```
+
+3. Ejecutar esquema de base de datos:
+```bash
+mysql -u root -p uifce_support < database/schema.sql
+```
+
+4. Ejecutar migración de datos:
+```bash
+npm run seed
+```
+
+### Ejecutar el Servidor
+
+**Backend:**
+```bash
+cd server
+npm run dev
+```
+
+**Frontend:**
+```bash
+npm run dev
+```
+
+El backend estará disponible en `http://localhost:3001` y el frontend en `http://localhost:5173`
+
+## API Endpoints
+
+### Autenticación
+- `POST /api/auth/login` - Iniciar sesión
+- `POST /api/auth/register` - Registrar usuario
+
+### Tickets
+- `GET /api/tickets` - Obtener todos los tickets
+- `GET /api/tickets/:id` - Obtener ticket por ID
+- `POST /api/tickets` - Crear nuevo ticket
+- `PUT /api/tickets/:id` - Actualizar ticket
+- `DELETE /api/tickets/:id` - Eliminar ticket
+- `POST /api/tickets/:id/comentarios` - Agregar comentario
+
+### Usuarios
+- `GET /api/users` - Obtener todos los usuarios (admin)
+- `GET /api/users/:id` - Obtener usuario por ID
+- `POST /api/users` - Crear usuario (admin)
+- `PUT /api/users/:id` - Actualizar usuario
+- `DELETE /api/users/:id` - Eliminar usuario (admin)
+
+### Categorías
+- `GET /api/categorias` - Obtener todas las categorías
+- `GET /api/categorias/:id` - Obtener categoría por ID
+- `POST /api/categorias` - Crear categoría (admin)
+- `PUT /api/categorias/:id` - Actualizar categoría (admin)
+- `DELETE /api/categorias/:id` - Eliminar categoría (admin)
+
+### Ubicaciones
+- `GET /api/ubicaciones` - Obtener todas las ubicaciones
+- `GET /api/ubicaciones/:id` - Obtener ubicación por ID
+- `POST /api/ubicaciones` - Crear ubicación (admin)
+- `PUT /api/ubicaciones/:id` - Actualizar ubicación (admin)
+- `DELETE /api/ubicaciones/:id` - Eliminar ubicación (admin)
+- `GET /api/ubicaciones/edificios/all` - Obtener todos los edificios
+- `POST /api/ubicaciones/edificios` - Crear edificio (admin)
+
+## Usuario Admin Por Defecto
+
+- Email: `uniic_bog@unal.edu.co`
+- Contraseña: `Admin123!`
+- Estado: Bloqueado (protegido contra eliminación)
+
+## Licencia
+
+MIT
