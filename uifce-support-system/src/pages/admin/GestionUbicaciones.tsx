@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Ubicacion } from '../../types';
 import {
   Paper,
   Box,
@@ -26,7 +27,7 @@ import { mockUbicaciones, mockEdificios, mockTickets } from '../../data/mockData
 
 export default function GestionUbicaciones() {
   const [edificioSeleccionado, setEdificioSeleccionado] = useState<string | null>(null);
-  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<any>(null);
+  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<Ubicacion | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'edificio' | 'ubicacion'>('ubicacion');
   const [editNombre, setEditNombre] = useState('');
@@ -146,7 +147,7 @@ export default function GestionUbicaciones() {
                     <IconButton
                       onClick={(e) => handleEditarEdificio(e, edificio)}
                       size="small"
-                      sx={{ color: '#94b43c' }}
+                      sx={{ color: '#94b43c', '&:hover': { color: '#7a9a30', backgroundColor: 'rgba(148, 180, 60, 0.1)' } }}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>

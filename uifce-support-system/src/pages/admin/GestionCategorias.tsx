@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Subcategoria } from '../../types';
 import {
   Paper,
   Box,
@@ -26,7 +27,7 @@ import { mockCategorias, mockSubcategorias, mockTickets } from '../../data/mockD
 
 export default function GestionCategorias() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
-  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<any>(null);
+  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<Subcategoria | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'categoria' | 'subcategoria'>('subcategoria');
   const [editNombre, setEditNombre] = useState('');
@@ -146,7 +147,7 @@ export default function GestionCategorias() {
                     <IconButton
                       onClick={(e) => handleEditarCategoria(e, categoria.id)}
                       size="small"
-                      sx={{ color: '#94b43c' }}
+                      sx={{ color: '#94b43c', '&:hover': { color: '#7a9a30', backgroundColor: 'rgba(148, 180, 60, 0.1)' } }}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>

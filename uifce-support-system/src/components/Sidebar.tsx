@@ -1,4 +1,12 @@
-import { Box, List, ListItem, ListItemButton, ListItemText, useMediaQuery, useTheme, ListItemIcon, Divider } from '@mui/material';
+import Box from '@mui/material/Box';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Divider from '@mui/material/Divider';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import AddIcon from '@mui/icons-material/Add';
@@ -11,11 +19,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DescriptionIcon from '@mui/icons-material/Description';
 
-interface SidebarProps {
-  open?: boolean;
-}
-
-export default function Sidebar({ open }: SidebarProps) {
+export default function Sidebar() {
   const { user } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,22 +62,24 @@ export default function Sidebar({ open }: SidebarProps) {
       sx={{
         width: isMobile ? '100%' : 240,
         bgcolor: '#002f6c',
-        color: 'white',
+        color: '#ffffff',
         minHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
         borderRight: '4px solid #94b43c',
       }}
     >
-      <List sx={{ flexGrow: 1, py: 2 }}>
+      <List sx={{ flexGrow: 1, py: 2 }} role="navigation" aria-label="Menú principal">
         {menuItems.map((item, index) =>
           item.divider ? (
-            <Divider key={`divider-${index}`} sx={{ my: 1, borderColor: 'rgba(255,255,255,0.2)' }} />
+            <Divider key={`divider-${index}`} sx={{ my: 1, borderColor: 'rgba(255,255,255,0.3)' }} />
           ) : (
             <ListItem key={item.path} disablePadding>
               <ListItemButton
-                onClick={() => navigate(item.path)}
+                onClick={() => item.path && navigate(item.path)}
                 selected={location.pathname === item.path}
+                aria-label={item.text}
+                aria-current={location.pathname === item.path ? 'page' : undefined}
                 sx={{
                   mx: 2,
                   my: 0.5,
@@ -90,7 +96,7 @@ export default function Sidebar({ open }: SidebarProps) {
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+                <ListItemIcon sx={{ color: '#ffffff', minWidth: 40 }} aria-hidden="true">
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
@@ -98,7 +104,8 @@ export default function Sidebar({ open }: SidebarProps) {
                   sx={{
                     '& .MuiTypography-root': {
                       fontSize: '0.95rem',
-                      fontWeight: location.pathname === item.path ? 600 : 400,
+                      fontWeight: location.pathname === item.path ? 700 : 500,
+                      color: 'white',
                     },
                   }}
                 />

@@ -11,27 +11,46 @@ import {
   Divider,
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
+import { validateEmail, validateField } from '../../utils/validation';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const { login } = useApp();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setEmailError('');
 
-    // RF-01: Validar correo institucional UNAL
+    // Validar email con formato institucional
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      setEmailError(emailValidation.error || 'Email inválido');
+      return;
+    }
+
+    // Validar que sea correo institucional UNAL
     if (!email.endsWith('@unal.edu.co')) {
-      setError('Debe usar su correo institucional @unal.edu.co');
+      setEmailError('Debe usar su correo institucional @unal.edu.co');
+      return;
+    }
+
+    // Validar contraseña
+    const passwordValidation = validateField(password, { 
+      required: true, 
+      minLength: 6 
+    });
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.error || 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     const success = login(email, password);
     if (success) {
-      // Redirigir según el rol del usuario
       navigate('/');
     } else {
       setError('Credenciales inválidas');
@@ -108,6 +127,8 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              error={!!emailError}
+              helperText={emailError}
               required
               sx={{ mb: 2 }}
               placeholder="usuario@unal.edu.co"
@@ -118,6 +139,8 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              error={!!error}
+              helperText={error}
               required
               sx={{ mb: 3 }}
             />
@@ -128,7 +151,12 @@ export default function Login() {
               size="large"
               sx={{
                 bgcolor: '#002f6c',
-                '&:hover': { bgcolor: '#001f4d' },
+                color: '#ffffff',
+                fontWeight: 'bold',
+                '&:hover': { 
+                  bgcolor: '#001f4d',
+                  color: '#ffffff',
+                },
                 py: 1.5,
               }}
             >

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import {
   Paper,
@@ -26,24 +26,46 @@ import {
   Divider,
   Snackbar,
   Alert,
+  TablePagination,
+  Fade,
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
 import { calcularTiempoRestante, formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
 import { mockCategorias, mockSubcategorias, mockUbicaciones, mockEdificios } from '../../data/mockData';
+import type { Ticket } from '../../types';
+import Breadcrumbs from '../../components/Breadcrumbs';
+import { LoadingSpinner } from '../../components/atoms';
 
+/**
+ * Componente ColaTickets
+ * 
+ * Muestra la cola de tickets para administradores y técnicos.
+ * Permite filtrar por estado, ver detalles, asignar técnicos,
+ * cambiar estado de tickets y modificar categoría/ubicación.
+ * 
+ * @example
+ * ```tsx
+ * <ColaTickets />
+ * ```
+ */
 export default function ColaTickets() {
   const { tickets, actualizarTicketCompleto, users, actualizarCategoriaTicket, user } = useApp();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTecnico = user?.rol === 'tecnico';
   const [filtroEstado, setFiltroEstado] = useState('activos');
-  const [ticketSeleccionado, setTicketSeleccionado] = useState<any>(null);
+  const [ticketSeleccionado, setTicketSeleccionado] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [nuevoEstado, setNuevoEstado] = useState('');
   const [nuevoTecnico, setNuevoTecnico] = useState('');
   const [comentario, setComentario] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Estados para paginación
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Estados para edición de categoría
   const [editandoCategoria, setEditandoCategoria] = useState(false);
@@ -86,7 +108,33 @@ export default function ColaTickets() {
     });
   }, [tickets, filtroEstado]);
 
-  const getPriorityColor = (prioridad: string) => {
+  // Aplicar paginación
+  const paginatedTickets = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return ticketsFiltrados.slice(startIndex, endIndex);
+  }, [ticketsFiltrados, page, rowsPerPage]);
+
+  // Manejadores de paginación
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Simular carga inicial
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const getPriorityColor = useCallback((prioridad: string) => {
     switch (prioridad) {
       case 'critica':
         return { bgcolor: '#fee2e2', color: '#991b1b' };
@@ -97,9 +145,9 @@ export default function ColaTickets() {
       default:
         return { bgcolor: '#f3f4f6', color: '#374151' };
     }
-  };
+  }, []);
 
-  const getStatusColor = (estado: string) => {
+  const getStatusColor = useCallback((estado: string) => {
     switch (estado) {
       case 'abierto':
         return { bgcolor: '#eff6ff', color: '#1e40af' };
@@ -110,9 +158,9 @@ export default function ColaTickets() {
       default:
         return { bgcolor: '#f3f4f6', color: '#374151' };
     }
-  };
+  }, []);
 
-  const getStatusLabel = (estado: string) => {
+  const getStatusLabel = useCallback((estado: string) => {
     switch (estado) {
       case 'abierto':
         return 'Abierto';
@@ -123,9 +171,9 @@ export default function ColaTickets() {
       default:
         return estado;
     }
-  };
+  }, []);
 
-  const handleRowClick = (ticket: any) => {
+  const handleRowClick = useCallback((ticket: Ticket) => {
     setTicketSeleccionado(ticket);
     setNuevoEstado(ticket.estado);
     setNuevoTecnico(ticket.tecnicoAsignado || '');
@@ -138,20 +186,20 @@ export default function ColaTickets() {
     const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticket.ubicacion);
     setNuevoEdificio(ubicacionActual?.edificio || '');
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleIniciarEdicionCategoria = () => {
+  const handleIniciarEdicionCategoria = useCallback(() => {
     setEditandoCategoria(true);
-  };
+  }, []);
 
-  const handleCancelarEdicionCategoria = () => {
+  const handleCancelarEdicionCategoria = useCallback(() => {
     setEditandoCategoria(false);
-    setNuevaCategoria(ticketSeleccionado.categoria);
-    setNuevaSubcategoria(ticketSeleccionado.subcategoria);
-    setNuevaUbicacion(ticketSeleccionado.ubicacion);
-    const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticketSeleccionado.ubicacion);
+    setNuevaCategoria(ticketSeleccionado?.categoria || '');
+    setNuevaSubcategoria(ticketSeleccionado?.subcategoria || '');
+    setNuevaUbicacion(ticketSeleccionado?.ubicacion || '');
+    const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticketSeleccionado?.ubicacion);
     setNuevoEdificio(ubicacionActual?.edificio || '');
-  };
+  }, [ticketSeleccionado]);
 
   const handleGuardarCategoria = () => {
     if (!ticketSeleccionado) return;
@@ -270,7 +318,18 @@ export default function ColaTickets() {
             </Box>
           </Box>
 
-          {/* Vista móvil: Cards */}
+          <Breadcrumbs />
+
+          {isLoading ? (
+            <Fade in={isLoading} timeout={500}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <LoadingSpinner message="Cargando tickets..." />
+              </Box>
+            </Fade>
+          ) : (
+            <Fade in={!isLoading} timeout={500}>
+              <Box>
+            {/* Vista móvil: Cards */}
           {isMobile ? (
             <Box sx={{ p: 2 }}>
               {ticketsFiltrados.length === 0 ? (
@@ -387,7 +446,7 @@ export default function ColaTickets() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    ticketsFiltrados.map((ticket) => (
+                    paginatedTickets.map((ticket) => (
                       <TableRow key={ticket.id} hover onClick={() => handleRowClick(ticket)} sx={{ cursor: 'pointer' }}>
                         <TableCell sx={{ fontWeight: 'bold', color: '#002f6c', fontFamily: 'monospace' }}>
                           {ticket.id}
@@ -461,12 +520,31 @@ export default function ColaTickets() {
                   )}
                 </TableBody>
               </Table>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={ticketsFiltrados.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Filas por página:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                sx={{
+                  borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+                }}
+              />
             </TableContainer>
+          )}
+              </Box>
+            </Fade>
           )}
         </Box>
 
         {/* Modal de detalle del ticket */}
         <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
+          <Fade in={modalOpen} timeout={300}>
+            <Box>
           <DialogTitle sx={{ bgcolor: '#002f6c', color: 'white' }}>
             Detalle del Ticket {ticketSeleccionado?.id}
           </DialogTitle>
@@ -671,6 +749,8 @@ export default function ColaTickets() {
               </Button>
             )}
           </DialogActions>
+            </Box>
+          </Fade>
         </Dialog>
 
         <Snackbar

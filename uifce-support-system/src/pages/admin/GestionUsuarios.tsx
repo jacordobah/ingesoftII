@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMediaQuery, useTheme } from '@mui/material';
+import type { User } from '../../types';
 import {
   Paper,
   Box,
@@ -33,20 +34,20 @@ const ADMIN_PROTEGIDO = 'uniic_bog@unal.edu.co';
 export default function GestionUsuarios() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<any>(null);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [nuevoRol, setNuevoRol] = useState<'tecnico' | 'admin'>('tecnico');
   const [isCreating, setIsCreating] = useState(false);
   const [nuevoEmail, setNuevoEmail] = useState('');
   const [eliminarModalOpen, setEliminarModalOpen] = useState(false);
-  const [usuarioAEliminar, setUsuarioAEliminar] = useState<any>(null);
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState<User | null>(null);
 
   const tecnicosYAdmins = mockUsers.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
   const admins = mockUsers.filter((u) => u.rol === 'admin');
 
-  const handleCambiarRol = (usuario: any) => {
+  const handleCambiarRol = (usuario: User) => {
     setUsuarioSeleccionado(usuario);
-    setNuevoRol(usuario.rol);
+    setNuevoRol(usuario.rol === 'admin' || usuario.rol === 'tecnico' ? usuario.rol : 'tecnico');
     setIsCreating(false);
     setModalOpen(true);
   };
@@ -84,11 +85,11 @@ export default function GestionUsuarios() {
       console.log('Crear usuario:', { email: nuevoEmail, rol: nuevoRol });
     } else {
       // Validación: debe haber al menos un admin
-      if (nuevoRol !== 'admin' && admins.length === 1 && admins[0].id === usuarioSeleccionado.id) {
+      if (nuevoRol !== 'admin' && admins.length === 1 && admins[0].id === usuarioSeleccionado?.id) {
         alert('El sistema debe tener al menos un usuario administrador.');
         return;
       }
-      console.log('Cambiar rol:', { userId: usuarioSeleccionado.id, nuevoRol });
+      console.log('Cambiar rol:', { userId: usuarioSeleccionado?.id, nuevoRol });
     }
     setModalOpen(false);
   };
@@ -119,8 +120,12 @@ export default function GestionUsuarios() {
               onClick={handleCrearUsuario}
               sx={{
                 bgcolor: '#94b43c',
-                color: '#002f6c',
-                '&:hover': { bgcolor: '#7a9a30' },
+                color: '#ffffff',
+                fontWeight: 'bold',
+                '&:hover': { 
+                  bgcolor: '#7a9a30',
+                  color: '#ffffff',
+                },
                 width: { xs: '100%', sm: 'auto' },
               }}
             >
