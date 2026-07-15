@@ -1,53 +1,49 @@
 // Configuración de la API
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Backend real: Spring Boot (uifce-support-system-backend), rutas bajo /api/v1.
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
 // Endpoints
+// NOTA: el backend Java no tiene AuthController (no hay login/JWT) ni
+// AuditController implementado. `auditoria.*` seguira sin datos reales hasta
+// que se implemente esa parte del backend.
 export const ENDPOINTS = {
-  auth: {
-    login: `${API_URL}/auth/login`,
-    me: `${API_URL}/auth/me`,
-    register: `${API_URL}/auth/register`,
-  },
   usuarios: {
     getAll: `${API_URL}/usuarios`,
-    getById: (id: string) => `${API_URL}/usuarios/${id}`,
+    getById: (id: number) => `${API_URL}/usuarios/${id}`,
     create: `${API_URL}/usuarios`,
-    update: (id: string) => `${API_URL}/usuarios/${id}`,
-    delete: (id: string) => `${API_URL}/usuarios/${id}`,
+    delete: (id: number) => `${API_URL}/usuarios/${id}`,
   },
   tickets: {
     getAll: `${API_URL}/tickets`,
-    getById: (id: string) => `${API_URL}/tickets/${id}`,
     create: `${API_URL}/tickets`,
-    update: (id: string) => `${API_URL}/tickets/${id}`,
-    delete: (id: string) => `${API_URL}/tickets/${id}`,
-    addComment: (id: string) => `${API_URL}/tickets/${id}/comentarios`,
+    cambiarEstado: `${API_URL}/tickets/cambiar-estado`,
+    asignarTecnico: `${API_URL}/tickets/asignar-tecnico`,
   },
   categorias: {
-    getAll: `${API_URL}/categorias`,
-    getById: (id: string) => `${API_URL}/categorias/${id}`,
-    create: `${API_URL}/categorias`,
-    update: (id: string) => `${API_URL}/categorias/${id}`,
-    delete: (id: string) => `${API_URL}/categorias/${id}`,
-    createSubcategoria: (id: string) => `${API_URL}/categorias/${id}/subcategorias`,
-    updateSubcategoria: (id: string) => `${API_URL}/categorias/subcategorias/${id}`,
-    deleteSubcategoria: (id: string) => `${API_URL}/categorias/subcategorias/${id}`,
+    getAll: `${API_URL}/categoria`,
+    getById: (id: number) => `${API_URL}/categoria/${id}`,
+    create: `${API_URL}/categoria`,
+    update: `${API_URL}/categoria`,
+    delete: (id: number) => `${API_URL}/categoria/${id}`,
+    getSubcategorias: (categoriaId: number) => `${API_URL}/categoria/${categoriaId}/subcategorias`,
+    createSubcategoria: (categoriaId: number) => `${API_URL}/categoria/${categoriaId}/supcategoria`,
+    updateSubcategoria: `${API_URL}/categoria/subcategoria`,
+    deleteSubcategoria: (id: number) => `${API_URL}/categoria/subcategoria/${id}`,
   },
   ubicaciones: {
-    getAll: `${API_URL}/ubicaciones`,
-    getEdificioById: (id: string) => `${API_URL}/ubicaciones/edificios/${id}`,
-    createEdificio: `${API_URL}/ubicaciones/edificios`,
-    updateEdificio: (id: string) => `${API_URL}/ubicaciones/edificios/${id}`,
-    deleteEdificio: (id: string) => `${API_URL}/ubicaciones/edificios/${id}`,
-    createUbicacion: (id: string) => `${API_URL}/ubicaciones/edificios/${id}/ubicaciones`,
-    updateUbicacion: (id: string) => `${API_URL}/ubicaciones/ubicaciones/${id}`,
-    deleteUbicacion: (id: string) => `${API_URL}/ubicaciones/ubicaciones/${id}`,
+    getAll: `${API_URL}/edificios`,
+    getEdificioById: (id: number) => `${API_URL}/edificios/${id}`,
+    createEdificio: `${API_URL}/edificios`,
+    updateEdificio: `${API_URL}/edificios`,
+    deleteEdificio: (id: number) => `${API_URL}/edificios/${id}`,
+    getOficinas: (edificioId: number) => `${API_URL}/edificios/${edificioId}/oficinas`,
+    createOficina: (edificioId: number) => `${API_URL}/edificios/${edificioId}/oficinas`,
+    updateOficina: `${API_URL}/edificios/oficinas`,
+    deleteOficina: (id: number) => `${API_URL}/edificios/oficinas/${id}`,
   },
   auditoria: {
     getAll: `${API_URL}/auditoria`,
-    getById: (id: string) => `${API_URL}/auditoria/${id}`,
     getByTicket: (ticketId: string) => `${API_URL}/auditoria/ticket/${ticketId}`,
-    create: `${API_URL}/auditoria`,
   },
 };
 
@@ -56,16 +52,10 @@ export async function apiRequest<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('token');
-  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const response = await fetch(url, {
     ...options,

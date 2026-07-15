@@ -66,7 +66,7 @@ public class LocationController {
         return ResponseEntity.ok(locationService.updateOffice(officeUpdate));
     }
 
-    @GetMapping("/api/edificios/oficinas/{id}")
+    @GetMapping("/oficinas/{id}")
     public ResponseEntity<OfficeResponseDetailDTO> getOffice(@PathVariable Long id){
         return ResponseEntity.ok(locationService.getOffice(id));
     }

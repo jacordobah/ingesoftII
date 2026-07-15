@@ -1,30 +1,24 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Auditoria, Comentario, Ticket, TicketStatus, User } from '../types';
-import { mockAuditoria, mockTickets, mockUsers } from '../data/mockData';
+import type {
+  Auditoria,
+  Categoria,
+  Edificio,
+  Subcategoria,
+  Ticket,
+  TicketPriority,
+  TicketStatus,
+  Ubicacion,
+  User,
+} from '../types';
 import { ENDPOINTS, apiRequest } from '../config/api';
-import {
-  calcularPrioridad,
-  calcularTiempoRespuesta,
-  calcularPuntajeTotal,
-  generateTicketId,
-} from '../utils/ticketUtils';
 
 interface CrearTicketData {
-  categoria: string;
-  subcategoria: string;
-  ubicacion: string;
-  cantidadEquipos: string;
+  subcategoriaId: number;
+  oficinaId: number;
+  cantidadEquipos: number;
   telefonoContacto: string;
   descripcion: string;
-  puntajeSubcategoria: number;
-  puntajeUbicacion: number;
-  puntajeCantidad: number;
-}
-
-interface AuthResponse {
-  token: string;
-  user: User;
 }
 
 interface AppContextType {
@@ -32,6 +26,10 @@ interface AppContextType {
   tickets: Ticket[];
   auditoria: Auditoria[];
   users: User[];
+  categorias: Categoria[];
+  subcategorias: Subcategoria[];
+  edificios: Edificio[];
+  oficinas: Ubicacion[];
   isAuthenticated: boolean;
 
   login: (email: string, password: string) => Promise<boolean>;
@@ -41,29 +39,46 @@ interface AppContextType {
   asignarTicket: (ticketId: string, tecnicoId: string) => Promise<void>;
   reasignarTicket: (ticketId: string, nuevoTecnicoId: string) => Promise<void>;
   actualizarEstadoTicket: (ticketId: string, nuevoEstado: TicketStatus) => Promise<void>;
-  agregarComentario: (ticketId: string, contenido: string) => Promise<void>;
   actualizarTicketCompleto: (
     ticketId: string,
     nuevoEstado: TicketStatus,
     nuevoTecnico: string,
     comentario: string
   ) => Promise<void>;
-  actualizarCategoriaTicket: (
-    ticketId: string,
-    nuevaCategoria: string,
-    nuevaSubcategoria: string,
-    nuevaUbicacion: string,
-    puntajeSubcategoria: number,
-    puntajeUbicacion: number
-  ) => Promise<void>;
 
-  getTicketsByUsuario: (usuarioId: string) => Ticket[];
-  getTicketsByTecnico: (tecnicoId: string) => Ticket[];
+  getTicketsByUsuario: (email: string) => Ticket[];
+
+  recargarDatos: () => Promise<void>;
+  recargarMatrizPuntajes: () => Promise<void>;
 }
 
-const TOKEN_STORAGE_KEY = 'token';
 const USER_STORAGE_KEY = 'user';
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+// El backend usa Spring Data Page<T> para /tickets y /usuarios: los datos
+// reales vienen en `content`, no en un arreglo plano.
+interface PageResponse<T> {
+  content: T[];
+}
+
+// El enum Status de Java es Abierto/En_proceso/Cerrado; el front usa
+// abierto/en_proceso/cerrado. El enum Priority es Alta/Media/Baja; el front
+// usa baja/media/critica (Alta del backend = critica en el front).
+const ESTADO_DESDE_BACKEND: Record<string, TicketStatus> = {
+  Abierto: 'abierto',
+  En_proceso: 'en_proceso',
+  Cerrado: 'cerrado',
+};
+const ESTADO_HACIA_BACKEND: Record<TicketStatus, string> = {
+  abierto: 'Abierto',
+  en_proceso: 'En_proceso',
+  cerrado: 'Cerrado',
+};
+const PRIORIDAD_DESDE_BACKEND: Record<string, TicketPriority> = {
+  Alta: 'critica',
+  Media: 'media',
+  Baja: 'baja',
+};
 
 function getStoredUser(): User | null {
   try {
@@ -74,122 +89,153 @@ function getStoredUser(): User | null {
   }
 }
 
-function normalizeTicket(ticket: Ticket): Ticket {
-  return {
-    ...ticket,
-    fechaCreacion: new Date(ticket.fechaCreacion),
-    fechaActualizacion: ticket.fechaActualizacion ? new Date(ticket.fechaActualizacion) : undefined,
-    fechaResolucion: ticket.fechaResolucion ? new Date(ticket.fechaResolucion) : undefined,
-    comentarios: ticket.comentarios.map((comentario) => ({
-      ...comentario,
-      fecha: new Date(comentario.fecha),
-    })),
-  };
+// Forma real del JSON que devuelve TicketResponseAssignmentDTO (verificado
+// contra el backend con curl); sus nombres de campo NO coinciden 1:1 con el
+// tipo Ticket del front (usuarioCorreo/subcategoriaNombre/oficinaNombre+
+// edificioNombre/tiempoRespuesta en vez de usuarioEmail/subcategoria/
+// ubicacion/tiempoEstimado). El backend tampoco expone el id del solicitante
+// ni un campo de telefono de contacto (no existe esa columna en la BD).
+interface TicketBackendDTO {
+  id: string;
+  usuarioNombre: string;
+  usuarioCorreo: string;
+  categoria: string;
+  subcategoriaNombre: string;
+  oficinaNombre: string;
+  edificioNombre: string;
+  cantidadEquipos: number;
+  descripcion: string;
+  estado: string;
+  tiempoRespuesta: string;
+  prioridad: string;
+  puntajeTotal: number;
+  fechaCreacion: string;
+  fechaActualizacion: string;
+  fechaResolucion: string | null;
+  tecnicoAsignado: string | null;
+  comentario: string | null;
 }
 
-function normalizeAuditoria(record: Auditoria): Auditoria {
+function normalizeTicket(dto: TicketBackendDTO): Ticket {
   return {
-    ...record,
-    fecha: new Date(record.fecha),
-  };
-}
-
-function warnApiFallback(action: string, error: unknown) {
-  console.warn(`API no disponible para ${action}; usando datos locales.`, error);
-}
-
-function createAuditRecord(
-  ticketId: string,
-  accion: Auditoria['accion'],
-  actor: User,
-  detalles: Auditoria['detalles']
-): Auditoria {
-  return {
-    id: `AUD-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    ticketId,
-    accion,
-    usuario: actor.nombre,
-    usuarioRol: actor.rol,
-    fecha: new Date(),
-    detalles,
+    id: dto.id,
+    usuarioNombre: dto.usuarioNombre,
+    usuarioEmail: dto.usuarioCorreo,
+    categoria: dto.categoria,
+    subcategoria: dto.subcategoriaNombre,
+    ubicacion: dto.edificioNombre ? `${dto.edificioNombre} - ${dto.oficinaNombre}` : dto.oficinaNombre,
+    cantidadEquipos: dto.cantidadEquipos,
+    // No existe columna de telefono de contacto en el backend actual.
+    telefonoContacto: '',
+    descripcion: dto.descripcion,
+    puntajeTotal: dto.puntajeTotal,
+    prioridad: PRIORIDAD_DESDE_BACKEND[dto.prioridad] ?? 'baja',
+    tiempoEstimado: dto.tiempoRespuesta,
+    estado: ESTADO_DESDE_BACKEND[dto.estado] ?? 'abierto',
+    tecnicoAsignado: dto.tecnicoAsignado && dto.tecnicoAsignado !== 'undefined' ? dto.tecnicoAsignado : undefined,
+    fechaCreacion: new Date(dto.fechaCreacion),
+    fechaActualizacion: dto.fechaActualizacion ? new Date(dto.fechaActualizacion) : undefined,
+    fechaResolucion: dto.fechaResolucion ? new Date(dto.fechaResolucion) : undefined,
+    comentarios: [],
   };
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(getStoredUser);
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets.map(normalizeTicket));
-  const [auditoria, setAuditoria] = useState<Auditoria[]>(mockAuditoria.map(normalizeAuditoria));
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [auditoria] = useState<Auditoria[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [subcategorias, setSubcategorias] = useState<Subcategoria[]>([]);
+  const [edificios, setEdificios] = useState<Edificio[]>([]);
+  const [oficinas, setOficinas] = useState<Ubicacion[]>([]);
 
   const isAuthenticated = user !== null;
 
   const refreshData = useCallback(async () => {
-    if (!localStorage.getItem(TOKEN_STORAGE_KEY)) return;
+    try {
+      const [apiTickets, apiUsers] = await Promise.all([
+        apiRequest<PageResponse<TicketBackendDTO>>(ENDPOINTS.tickets.getAll),
+        apiRequest<PageResponse<User>>(ENDPOINTS.usuarios.getAll),
+      ]);
+      setTickets(apiTickets.content.map(normalizeTicket));
+      setUsers(apiUsers.content);
+    } catch (error) {
+      console.error('No se pudo sincronizar con el backend:', error);
+    }
+    // auditoria.* no tiene implementacion en el backend (AuditController esta
+    // vacio), asi que no se intenta la llamada: se deja en [] hasta que exista.
+  }, []);
+
+  // Carga la matriz de puntajes real: categorias -> subcategorias,
+  // edificios -> oficinas. No hay endpoints "planos" para subcategorias u
+  // oficinas, por eso se recorre cada categoria/edificio.
+  const recargarMatrizPuntajes = useCallback(async () => {
+    try {
+      const apiCategorias = await apiRequest<Categoria[]>(ENDPOINTS.categorias.getAll);
+      setCategorias(apiCategorias);
+
+      const subcategoriasPorCategoria = await Promise.all(
+        apiCategorias.map((categoria) =>
+          apiRequest<Subcategoria[]>(ENDPOINTS.categorias.getSubcategorias(categoria.id))
+        )
+      );
+      setSubcategorias(subcategoriasPorCategoria.flat());
+    } catch (error) {
+      console.error('No se pudo cargar categorias/subcategorias:', error);
+    }
 
     try {
-      const [apiTickets, apiUsers, apiAuditoria] = await Promise.all([
-        apiRequest<Ticket[]>(ENDPOINTS.tickets.getAll),
-        apiRequest<User[]>(ENDPOINTS.usuarios.getAll),
-        apiRequest<Auditoria[]>(ENDPOINTS.auditoria.getAll),
-      ]);
+      const apiEdificios = await apiRequest<Edificio[]>(ENDPOINTS.ubicaciones.getAll);
+      setEdificios(apiEdificios);
 
-      setTickets(apiTickets.map(normalizeTicket));
-      setUsers(apiUsers);
-      setAuditoria(apiAuditoria.map(normalizeAuditoria));
+      const oficinasPorEdificio = await Promise.all(
+        apiEdificios.map((edificio) =>
+          apiRequest<Ubicacion[]>(ENDPOINTS.ubicaciones.getOficinas(edificio.id)).then((lista) =>
+            lista.map((oficina) => ({ ...oficina, edificioId: edificio.id, edificio: edificio.nombre }))
+          )
+        )
+      );
+      setOficinas(oficinasPorEdificio.flat());
     } catch (error) {
-      warnApiFallback('sincronizacion inicial', error);
+      console.error('No se pudo cargar edificios/oficinas:', error);
     }
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-    if (!token) return;
-
-    void apiRequest<User>(ENDPOINTS.auth.me)
-      .then((apiUser) => {
-        setUser(apiUser);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(apiUser));
-      })
-      .catch((error) => warnApiFallback('sesion', error));
-
     void refreshData();
-  }, [refreshData]);
+    void recargarMatrizPuntajes();
+  }, [refreshData, recargarMatrizPuntajes]);
 
+  // No existe backend de autenticacion (sin AuthController, sin password ni
+  // JWT): se busca un usuario real ya creado por su email; si no existe se
+  // crea como usuario real nuevo (rol 'usuario'), igual que antes se permitia
+  // cualquier correo institucional. La contrasena no se valida en el backend.
   const login = async (email: string, password: string): Promise<boolean> => {
+    void password; // el backend actual no valida contrasena (ver nota arriba)
     if (!email.endsWith('@unal.edu.co')) return false;
 
     try {
-      const session = await apiRequest<AuthResponse>(ENDPOINTS.auth.login, {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+      let encontrado = users.find((u) => u.email === email);
 
-      localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(session.user));
-      setUser(session.user);
-      await refreshData();
+      if (!encontrado) {
+        encontrado = await apiRequest<User>(ENDPOINTS.usuarios.create, {
+          method: 'POST',
+          body: JSON.stringify({ nombre: email.split('@')[0], email, rol: 'Usuario' }),
+        });
+        setUsers((current) => [...current, encontrado as User]);
+      }
+
+      setUser(encontrado);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(encontrado));
       return true;
     } catch (error) {
-      warnApiFallback('login', error);
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      console.error('No se pudo iniciar sesion:', error);
+      return false;
     }
-
-    const foundUser = mockUsers.find((mockUser) => mockUser.email === email);
-    const localUser: User =
-      foundUser ?? {
-        id: `USR-${Date.now()}`,
-        nombre: email.split('@')[0],
-        email,
-        rol: 'usuario',
-      };
-
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(localUser));
-    setUser(localUser);
-    return true;
   };
 
   const logout = () => {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);
   };
@@ -199,143 +245,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error('Usuario no autenticado');
     }
 
-    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
-      try {
-        const ticket = await apiRequest<Ticket>(ENDPOINTS.tickets.create, {
-          method: 'POST',
-          body: JSON.stringify(data),
-        });
-        const normalizedTicket = normalizeTicket(ticket);
-        setTickets((currentTickets) => [...currentTickets, normalizedTicket]);
-        void refreshData();
-        return normalizedTicket;
-      } catch (error) {
-        warnApiFallback('crear ticket', error);
-      }
-    }
+    const ticket = await apiRequest<TicketBackendDTO>(ENDPOINTS.tickets.create, {
+      method: 'POST',
+      body: JSON.stringify({
+        usuarioId: user.id,
+        subcategoriaId: data.subcategoriaId,
+        oficinaId: data.oficinaId,
+        cantidadEquipos: data.cantidadEquipos,
+        descripcion: data.descripcion,
+      }),
+    });
 
-    const puntajeTotal = calcularPuntajeTotal(
-      data.puntajeSubcategoria,
-      data.puntajeUbicacion,
-      data.puntajeCantidad
-    );
-
-    const nuevoTicket: Ticket = {
-      id: generateTicketId(),
-      usuarioId: user.id,
-      usuarioNombre: user.nombre,
-      usuarioEmail: user.email,
-      categoria: data.categoria,
-      subcategoria: data.subcategoria,
-      ubicacion: data.ubicacion,
-      cantidadEquipos: data.cantidadEquipos,
-      telefonoContacto: data.telefonoContacto,
-      descripcion: data.descripcion,
-      puntajeTotal,
-      prioridad: calcularPrioridad(puntajeTotal),
-      tiempoEstimado: calcularTiempoRespuesta(puntajeTotal),
-      estado: 'abierto',
-      fechaCreacion: new Date(),
-      comentarios: [],
-    };
-
-    setTickets((currentTickets) => [...currentTickets, nuevoTicket]);
-    setAuditoria((currentAuditoria) => [
-      ...currentAuditoria,
-      createAuditRecord(nuevoTicket.id, 'creacion_ticket', user, {}),
-    ]);
-
-    return nuevoTicket;
+    const normalizedTicket = normalizeTicket(ticket);
+    setTickets((currentTickets) => [...currentTickets, normalizedTicket]);
+    void refreshData();
+    return normalizedTicket;
   };
 
-  async function actualizarTicketCompleto(
+  const actualizarTicketCompleto = async (
     ticketId: string,
     nuevoEstado: TicketStatus,
     nuevoTecnico: string,
     comentario: string
-  ) {
+  ) => {
     if (!user) return;
-
-    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
-      try {
-        const updatedTicket = await apiRequest<Ticket>(ENDPOINTS.tickets.update(ticketId), {
-          method: 'PUT',
-          body: JSON.stringify({
-            estado: nuevoEstado,
-            tecnicoAsignado: nuevoTecnico,
-            comentario,
-          }),
-        });
-        const normalizedTicket = normalizeTicket(updatedTicket);
-        setTickets((currentTickets) =>
-          currentTickets.map((ticket) => (ticket.id === ticketId ? normalizedTicket : ticket))
-        );
-        void refreshData();
-        return;
-      } catch (error) {
-        warnApiFallback('actualizar ticket', error);
-      }
-    }
-
     const ticket = tickets.find((item) => item.id === ticketId);
     if (!ticket) return;
 
-    const nuevosComentarios = [...ticket.comentarios];
-    if (comentario && comentario.trim()) {
-      nuevosComentarios.push({
-        id: `COM-${Date.now()}`,
-        ticketId,
-        autor: user.nombre,
-        autorRol: user.rol,
-        contenido: comentario,
-        fecha: new Date(),
+    // Solo se reasigna si el tecnico seleccionado es distinto al ya asignado
+    // (el backend expone la asignacion y el cambio de estado como dos
+    // operaciones separadas: asignar-tecnico y cambiar-estado).
+    if (nuevoTecnico) {
+      const tecnicoActual = users.find((u) => u.nombre === ticket.tecnicoAsignado);
+      if (String(tecnicoActual?.id ?? '') !== nuevoTecnico) {
+        await apiRequest(ENDPOINTS.tickets.asignarTecnico, {
+          method: 'PATCH',
+          body: JSON.stringify({ ticketId, tecnicoID: Number(nuevoTecnico) }),
+        });
+      }
+    }
+
+    if (nuevoEstado !== ticket.estado) {
+      // tecnicoId aqui es el usuario que ejecuta la accion (para las
+      // validaciones de rol en TicketService), no el tecnico asignado.
+      await apiRequest(ENDPOINTS.tickets.cambiarEstado, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          id: ticketId,
+          tecnicoId: user.id,
+          estado: ESTADO_HACIA_BACKEND[nuevoEstado],
+          comentario: comentario || undefined,
+        }),
       });
     }
 
-    setTickets((currentTickets) =>
-      currentTickets.map((item) =>
-        item.id === ticketId
-          ? {
-              ...item,
-              estado: nuevoEstado,
-              tecnicoAsignado: nuevoTecnico || item.tecnicoAsignado,
-              comentarios: nuevosComentarios,
-              fechaActualizacion: new Date(),
-              fechaResolucion: nuevoEstado === 'cerrado' ? new Date() : item.fechaResolucion,
-            }
-          : item
-      )
-    );
-
-    const auditRecords: Auditoria[] = [];
-    if (ticket.estado !== nuevoEstado) {
-      auditRecords.push(
-        createAuditRecord(
-          ticketId,
-          nuevoEstado === 'cerrado' ? 'cierre_ticket' : 'cambio_estado',
-          user,
-          { estadoAnterior: ticket.estado, estadoNuevo: nuevoEstado }
-        )
-      );
-    }
-
-    if (ticket.tecnicoAsignado !== nuevoTecnico && nuevoTecnico) {
-      auditRecords.push(
-        createAuditRecord(ticketId, ticket.tecnicoAsignado ? 'reasignacion_ticket' : 'asignacion_ticket', user, {
-          tecnicoAnterior: ticket.tecnicoAsignado,
-          tecnicoNuevo: nuevoTecnico,
-        })
-      );
-    }
-
-    if (comentario && comentario.trim()) {
-      auditRecords.push(createAuditRecord(ticketId, 'inclusion_comentario', user, { comentario }));
-    }
-
-    if (auditRecords.length > 0) {
-      setAuditoria((currentAuditoria) => [...currentAuditoria, ...auditRecords]);
-    }
-  }
+    void refreshData();
+  };
 
   const asignarTicket = async (ticketId: string, tecnicoId: string) => {
     await actualizarTicketCompleto(ticketId, 'en_proceso', tecnicoId, '');
@@ -350,125 +315,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const actualizarEstadoTicket = async (ticketId: string, nuevoEstado: TicketStatus) => {
     const ticket = tickets.find((item) => item.id === ticketId);
     if (!ticket) return;
-    await actualizarTicketCompleto(ticketId, nuevoEstado, ticket.tecnicoAsignado || '', '');
-  };
-
-  const agregarComentario = async (ticketId: string, contenido: string) => {
-    if (!user) return;
-
-    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
-      try {
-        await apiRequest<Comentario>(ENDPOINTS.tickets.addComment(ticketId), {
-          method: 'POST',
-          body: JSON.stringify({ contenido }),
-        });
-        void refreshData();
-        return;
-      } catch (error) {
-        warnApiFallback('agregar comentario', error);
-      }
-    }
-
-    const nuevoComentario: Comentario = {
-      id: `COM-${Date.now()}`,
-      ticketId,
-      autor: user.nombre,
-      autorRol: user.rol,
-      contenido,
-      fecha: new Date(),
-    };
-
-    setTickets((currentTickets) =>
-      currentTickets.map((ticket) =>
-        ticket.id === ticketId
-          ? { ...ticket, comentarios: [...ticket.comentarios, nuevoComentario], fechaActualizacion: new Date() }
-          : ticket
-      )
-    );
-    setAuditoria((currentAuditoria) => [
-      ...currentAuditoria,
-      createAuditRecord(ticketId, 'inclusion_comentario', user, { comentario: contenido }),
-    ]);
-  };
-
-  const actualizarCategoriaTicket = async (
-    ticketId: string,
-    nuevaCategoria: string,
-    nuevaSubcategoria: string,
-    nuevaUbicacion: string,
-    puntajeSubcategoria: number,
-    puntajeUbicacion: number
-  ) => {
-    if (!user) return;
-
-    if (localStorage.getItem(TOKEN_STORAGE_KEY)) {
-      try {
-        const updatedTicket = await apiRequest<Ticket>(ENDPOINTS.tickets.update(ticketId), {
-          method: 'PUT',
-          body: JSON.stringify({
-            categoria: nuevaCategoria,
-            subcategoria: nuevaSubcategoria,
-            ubicacion: nuevaUbicacion,
-            puntajeSubcategoria,
-            puntajeUbicacion,
-          }),
-        });
-        const normalizedTicket = normalizeTicket(updatedTicket);
-        setTickets((currentTickets) =>
-          currentTickets.map((ticket) => (ticket.id === ticketId ? normalizedTicket : ticket))
-        );
-        void refreshData();
-        return;
-      } catch (error) {
-        warnApiFallback('actualizar categoria', error);
-      }
-    }
-
-    const ticket = tickets.find((item) => item.id === ticketId);
-    if (!ticket) return;
-
-    let puntajeCantidad = 0;
-    const cantidadEquipos = Number(ticket.cantidadEquipos);
-    if (cantidadEquipos >= 1 && cantidadEquipos <= 3) puntajeCantidad = 5;
-    else if (cantidadEquipos >= 4 && cantidadEquipos <= 14) puntajeCantidad = 12;
-    else if (cantidadEquipos >= 15 && cantidadEquipos <= 30) puntajeCantidad = 20;
-    else if (cantidadEquipos > 30) puntajeCantidad = 30;
-
-    const puntajeTotal = calcularPuntajeTotal(puntajeSubcategoria, puntajeUbicacion, puntajeCantidad);
-
-    setTickets((currentTickets) =>
-      currentTickets.map((item) =>
-        item.id === ticketId
-          ? {
-              ...item,
-              categoria: nuevaCategoria,
-              subcategoria: nuevaSubcategoria,
-              ubicacion: nuevaUbicacion,
-              puntajeTotal,
-              prioridad: calcularPrioridad(puntajeTotal),
-              tiempoEstimado: calcularTiempoRespuesta(puntajeTotal),
-              fechaActualizacion: new Date(),
-            }
-          : item
-      )
-    );
-
-    setAuditoria((currentAuditoria) => [
-      ...currentAuditoria,
-      createAuditRecord(ticketId, 'modificacion_categoria', user, {
-        categoriaAnterior: ticket.categoria,
-        categoriaNueva: nuevaCategoria,
-      }),
-    ]);
+    const tecnicoActual = users.find((u) => u.nombre === ticket.tecnicoAsignado);
+    await actualizarTicketCompleto(ticketId, nuevoEstado, tecnicoActual ? String(tecnicoActual.id) : '', '');
   };
 
   const getTicketsByUsuario = useCallback(
-    (usuarioId: string) => tickets.filter((ticket) => ticket.usuarioId === usuarioId),
-    [tickets]
-  );
-
-  const getTicketsByTecnico = useCallback(
-    (tecnicoId: string) => tickets.filter((ticket) => ticket.tecnicoAsignado === tecnicoId),
+    (email: string) => tickets.filter((ticket) => ticket.usuarioEmail === email),
     [tickets]
   );
 
@@ -479,6 +331,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         tickets,
         auditoria,
         users,
+        categorias,
+        subcategorias,
+        edificios,
+        oficinas,
         isAuthenticated,
         login,
         logout,
@@ -486,11 +342,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         asignarTicket,
         reasignarTicket,
         actualizarEstadoTicket,
-        agregarComentario,
         actualizarTicketCompleto,
-        actualizarCategoriaTicket,
         getTicketsByUsuario,
-        getTicketsByTecnico,
+        recargarDatos: refreshData,
+        recargarMatrizPuntajes,
       }}
     >
       {children}

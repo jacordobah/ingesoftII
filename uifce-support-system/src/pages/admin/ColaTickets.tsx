@@ -31,7 +31,6 @@ import {
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
 import { calcularTiempoRestante, formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
-import { mockCategorias, mockSubcategorias, mockUbicaciones, mockEdificios } from '../../data/mockData';
 import type { Ticket } from '../../types';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { LoadingSpinner } from '../../components/atoms';
@@ -49,7 +48,7 @@ import { LoadingSpinner } from '../../components/atoms';
  * ```
  */
 export default function ColaTickets() {
-  const { tickets, actualizarTicketCompleto, users, actualizarCategoriaTicket, user } = useApp();
+  const { tickets, actualizarTicketCompleto, users, user } = useApp();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTecnico = user?.rol === 'tecnico';
@@ -67,25 +66,10 @@ export default function ColaTickets() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Estados para edición de categoría
-  const [editandoCategoria, setEditandoCategoria] = useState(false);
-  const [nuevaCategoria, setNuevaCategoria] = useState('');
-  const [nuevaSubcategoria, setNuevaSubcategoria] = useState('');
-  const [nuevaUbicacion, setNuevaUbicacion] = useState('');
-  const [nuevoEdificio, setNuevoEdificio] = useState('');
-
   // Obtener lista de técnicos y administradores activos
   const tecnicosYAdmins = useMemo(() => {
     return users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
   }, [users]);
-
-  // Filtrar subcategorías y ubicaciones para edición
-  const subcategoriasFiltradas = mockSubcategorias.filter(
-    (s) => s.categoriaId === nuevaCategoria
-  );
-  const ubicacionesFiltradas = mockUbicaciones.filter(
-    (u) => u.edificio === nuevoEdificio
-  );
 
   //Filtrar y ordenar tickets por prioridad (RF-09)
   const ticketsFiltrados = useMemo(() => {
@@ -176,69 +160,13 @@ export default function ColaTickets() {
   const handleRowClick = useCallback((ticket: Ticket) => {
     setTicketSeleccionado(ticket);
     setNuevoEstado(ticket.estado);
-    setNuevoTecnico(ticket.tecnicoAsignado || '');
+    // El backend devuelve el nombre del tecnico, no su id; se resuelve aqui
+    // porque el <Select> de tecnico usa el id como value.
+    const tecnicoActual = users.find((u) => u.nombre === ticket.tecnicoAsignado);
+    setNuevoTecnico(tecnicoActual ? String(tecnicoActual.id) : '');
     setComentario('');
-    setEditandoCategoria(false);
-    setNuevaCategoria(ticket.categoria);
-    setNuevaSubcategoria(ticket.subcategoria);
-    setNuevaUbicacion(ticket.ubicacion);
-    // Determinar el edificio basado en la ubicación actual
-    const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticket.ubicacion);
-    setNuevoEdificio(ubicacionActual?.edificio || '');
     setModalOpen(true);
-  }, []);
-
-  const handleIniciarEdicionCategoria = useCallback(() => {
-    setEditandoCategoria(true);
-  }, []);
-
-  const handleCancelarEdicionCategoria = useCallback(() => {
-    setEditandoCategoria(false);
-    setNuevaCategoria(ticketSeleccionado?.categoria || '');
-    setNuevaSubcategoria(ticketSeleccionado?.subcategoria || '');
-    setNuevaUbicacion(ticketSeleccionado?.ubicacion || '');
-    const ubicacionActual = mockUbicaciones.find((u) => u.nombre === ticketSeleccionado?.ubicacion);
-    setNuevoEdificio(ubicacionActual?.edificio || '');
-  }, [ticketSeleccionado]);
-
-  const handleGuardarCategoria = () => {
-    if (!ticketSeleccionado) return;
-
-    if (!nuevaCategoria || !nuevaSubcategoria || !nuevaUbicacion) {
-      alert('Debe seleccionar categoría, subcategoría y ubicación');
-      return;
-    }
-
-    const catSeleccionada = mockCategorias.find((c) => c.id === nuevaCategoria);
-    const subSeleccionada = mockSubcategorias.find((s) => s.id === nuevaSubcategoria);
-    const ubiSeleccionada = mockUbicaciones.find((u) => u.id === nuevaUbicacion);
-
-    if (!catSeleccionada || !subSeleccionada || !ubiSeleccionada) {
-      alert('Error al obtener los datos de categoría, subcategoría o ubicación');
-      return;
-    }
-
-    actualizarCategoriaTicket(
-      ticketSeleccionado.id,
-      catSeleccionada.nombre,
-      subSeleccionada.nombre,
-      ubiSeleccionada.nombre,
-      subSeleccionada.puntaje,
-      ubiSeleccionada.puntaje
-    );
-
-    setEditandoCategoria(false);
-    setSnackbarMessage('Categoría, subcategoría y ubicación actualizadas correctamente. Los tiempos de respuesta han sido recalculados.');
-    setSnackbarOpen(true);
-
-    // Actualizar el ticket seleccionado con los nuevos valores
-    setTicketSeleccionado({
-      ...ticketSeleccionado,
-      categoria: catSeleccionada.nombre,
-      subcategoria: subSeleccionada.nombre,
-      ubicacion: ubiSeleccionada.nombre,
-    });
-  };
+  }, [users]);
 
   const handleGuardarCambios = () => {
     if (!ticketSeleccionado) return;
@@ -558,94 +486,13 @@ export default function ColaTickets() {
                   <Typography variant="body1">{ticketSeleccionado.usuarioNombre}</Typography>
                 </Box>
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#666' }}>
-                      Categoría
-                    </Typography>
-                    {!editandoCategoria && !isTecnico && (
-                      <Button size="small" onClick={handleIniciarEdicionCategoria} sx={{ fontSize: '0.75rem' }}>
-                        Editar
-                      </Button>
-                    )}
-                  </Box>
-                  {editandoCategoria ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Categoría</InputLabel>
-                        <Select
-                          value={nuevaCategoria}
-                          label="Categoría"
-                          onChange={(e) => {
-                            setNuevaCategoria(e.target.value);
-                            setNuevaSubcategoria('');
-                          }}
-                        >
-                          {mockCategorias.map((c) => (
-                            <MenuItem key={c.id} value={c.id}>
-                              {c.nombre}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <FormControl fullWidth>
-                        <InputLabel>Subcategoría</InputLabel>
-                        <Select
-                          value={nuevaSubcategoria}
-                          label="Subcategoría"
-                          onChange={(e) => setNuevaSubcategoria(e.target.value)}
-                          disabled={!nuevaCategoria}
-                        >
-                          {subcategoriasFiltradas.map((s) => (
-                            <MenuItem key={s.id} value={s.id}>
-                              {s.nombre}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <FormControl fullWidth>
-                        <InputLabel>Edificio</InputLabel>
-                        <Select
-                          value={nuevoEdificio}
-                          label="Edificio"
-                          onChange={(e) => {
-                            setNuevoEdificio(e.target.value);
-                            setNuevaUbicacion('');
-                          }}
-                        >
-                          {mockEdificios.map((e) => (
-                            <MenuItem key={e} value={e}>
-                              {e}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <FormControl fullWidth>
-                        <InputLabel>Ubicación</InputLabel>
-                        <Select
-                          value={nuevaUbicacion}
-                          label="Ubicación"
-                          onChange={(e) => setNuevaUbicacion(e.target.value)}
-                          disabled={!nuevoEdificio}
-                        >
-                          {ubicacionesFiltradas.map((u) => (
-                            <MenuItem key={u.id} value={u.id}>
-                              {u.nombre}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button onClick={handleGuardarCategoria} variant="contained" size="small">
-                          Guardar Cambios
-                        </Button>
-                        <Button onClick={handleCancelarEdicionCategoria} variant="outlined" size="small">
-                          Cancelar
-                        </Button>
-                      </Box>
-                    </Box>
-                  ) : (
-                    <Typography variant="body1">{ticketSeleccionado.categoria} - {ticketSeleccionado.subcategoria}</Typography>
-                  )}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#666' }}>
+                    Categoría
+                  </Typography>
+                  {/* El backend no tiene un endpoint para reasignar categoria/
+                      subcategoria/oficina de un ticket ya creado, por eso es
+                      de solo lectura. */}
+                  <Typography variant="body1">{ticketSeleccionado.categoria} - {ticketSeleccionado.subcategoria}</Typography>
                 </Box>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#666' }}>
@@ -701,7 +548,7 @@ export default function ColaTickets() {
                         >
                           <MenuItem value="">Sin asignar</MenuItem>
                           {tecnicosYAdmins.map((u) => (
-                            <MenuItem key={u.id} value={u.id}>
+                            <MenuItem key={u.id} value={String(u.id)}>
                               {u.nombre} ({u.rol === 'admin' ? 'Admin' : 'Técnico'})
                             </MenuItem>
                           ))}

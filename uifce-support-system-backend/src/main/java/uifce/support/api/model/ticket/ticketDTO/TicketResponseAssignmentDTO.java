@@ -19,8 +19,10 @@ public record TicketResponseAssignmentDTO(
         @JsonProperty("estado") String status,
         @JsonProperty("tiempoRespuesta") String responseTime,
         @JsonProperty("prioridad") String priority,
+        @JsonProperty("puntajeTotal") int score,
         @JsonProperty("fechaCreacion") LocalDateTime creationDate,
         @JsonProperty("fechaActualizacion") LocalDateTime updateDate,
+        @JsonProperty("fechaResolucion") LocalDateTime resolutionDate,
         @JsonProperty("tecnicoAsignado") String technician,
         @JsonProperty("comentario") String comment
 ) {
@@ -39,8 +41,10 @@ public record TicketResponseAssignmentDTO(
                 ticket.getStatus() != null ? ticket.getStatus().name() : null,
                 ticket.getResponseTime(),
                 ticket.getPriority() != null ? ticket.getPriority().name() : "",
+                ticket.getScore(),
                 ticket.getCreationDate(),
                 ticket.getUpdateTime(),
+                ticket.getResolutionDate(),
                 assignments.getUser() != null ? assignments.getUser().getName() : "undefined",
                 ticket.getComment()
         );
@@ -62,8 +66,10 @@ public record TicketResponseAssignmentDTO(
                 ticket.getStatus() != null ? ticket.getStatus().name() : null,
                 ticket.getResponseTime(),
                 ticket.getPriority() != null ? ticket.getPriority().name() : "",
+                ticket.getScore(),
                 ticket.getCreationDate(),
                 ticket.getUpdateTime(),
+                ticket.getResolutionDate(),
                 technicianName, // Asigna directamente el String procesado
                 ticket.getComment()
         );

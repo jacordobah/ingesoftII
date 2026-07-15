@@ -23,10 +23,11 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { mockCategorias, mockSubcategorias, mockTickets } from '../../data/mockData';
+import { useApp } from '../../contexts/AppContext';
 
 export default function GestionCategorias() {
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
+  const { categorias, subcategorias, tickets } = useApp();
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<Subcategoria | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'categoria' | 'subcategoria'>('subcategoria');
@@ -35,14 +36,14 @@ export default function GestionCategorias() {
   const [editOculto, setEditOculto] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  const handleCategoriaClick = (categoriaId: string) => {
+  const handleCategoriaClick = (categoriaId: number) => {
     setCategoriaSeleccionada(categoriaId);
     setSubcategoriaSeleccionada(null);
   };
 
-  const handleEditarCategoria = (e: React.MouseEvent, categoriaId: string) => {
+  const handleEditarCategoria = (e: React.MouseEvent, categoriaId: number) => {
     e.stopPropagation();
-    const categoria = mockCategorias.find((c) => c.id === categoriaId);
+    const categoria = categorias.find((c) => c.id === categoriaId);
     if (categoria) {
       setEditNombre(categoria.nombre);
       setEditOculto(categoria.oculto || false);
@@ -60,12 +61,14 @@ export default function GestionCategorias() {
     setModalOpen(true);
   };
 
-  const tieneTicketsAsociados = (id: string, type: 'categoria' | 'subcategoria') => {
+  // Los tickets guardan el nombre de la categoria/subcategoria, no el id.
+  const tieneTicketsAsociados = (id: number, type: 'categoria' | 'subcategoria') => {
     if (type === 'categoria') {
-      return mockTickets.some(t => t.categoria === id);
-    } else {
-      return mockTickets.some(t => t.subcategoria === id);
+      const nombre = categorias.find((c) => c.id === id)?.nombre;
+      return tickets.some((t) => t.categoria === nombre);
     }
+    const nombre = subcategorias.find((s) => s.id === id)?.nombre;
+    return tickets.some((t) => t.subcategoria === nombre);
   };
 
   const handleSubcategoriaClick = (subcategoria: any) => {
@@ -103,7 +106,7 @@ export default function GestionCategorias() {
   };
 
   const subcategoriasFiltradas = categoriaSeleccionada
-    ? mockSubcategorias.filter((sub) => sub.categoriaId === categoriaSeleccionada)
+    ? subcategorias.filter((sub) => sub.categoriaId === categoriaSeleccionada)
     : [];
 
   return (
@@ -122,7 +125,7 @@ export default function GestionCategorias() {
           {/* Lista de categorías */}
           <Box sx={{ width: { xs: '100%', md: '40%' }, borderRight: { md: 1 }, borderColor: 'divider' }}>
             <List sx={{ py: 0 }}>
-              {mockCategorias.map((categoria) => (
+              {categorias.map((categoria) => (
                 <ListItem key={categoria.id} disablePadding>
                   <ListItemButton
                     onClick={() => handleCategoriaClick(categoria.id)}
@@ -294,7 +297,7 @@ export default function GestionCategorias() {
             {!isCreating && (
               <Box sx={{ mt: 3 }}>
                 {tieneTicketsAsociados(
-                  modalType === 'categoria' ? categoriaSeleccionada || '' : subcategoriaSeleccionada?.id || '',
+                  (modalType === 'categoria' ? categoriaSeleccionada : subcategoriaSeleccionada?.id) ?? -1,
                   modalType
                 ) ? (
                   <Alert severity="warning" sx={{ mt: 2 }}>

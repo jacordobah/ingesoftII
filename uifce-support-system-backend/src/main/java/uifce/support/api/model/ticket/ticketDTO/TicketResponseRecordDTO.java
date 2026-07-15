@@ -18,6 +18,7 @@ public record  TicketResponseRecordDTO(
         @JsonProperty("estado") String status,
         @JsonProperty("tiempoRespuesta") String responseTime,
         @JsonProperty("prioridad") String priority,
+        @JsonProperty("puntajeTotal") int score,
         @JsonProperty("fechaCreacion") LocalDateTime creationDate
 ) {
     public TicketResponseRecordDTO(Ticket ticket) {
@@ -36,6 +37,7 @@ public record  TicketResponseRecordDTO(
                 ticket.getStatus() != null ? ticket.getStatus().name() : null,
                 ticket.getResponseTime(),
                 ticket.getPriority() != null ? ticket.getPriority().name() : null,
+                ticket.getScore(),
                 ticket.getCreationDate()
         );
     }
