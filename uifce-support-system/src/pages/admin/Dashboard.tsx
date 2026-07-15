@@ -14,7 +14,6 @@ import {
   Button,
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
-import { mockCategorias, mockEdificios } from '../../data/mockData';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
 /**
@@ -30,7 +29,7 @@ import Breadcrumbs from '../../components/Breadcrumbs';
  * ```
  */
 export default function Dashboard() {
-  const { tickets, users } = useApp();
+  const { tickets, users, categorias, edificios } = useApp();
 
   // Estados para filtros
   const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
@@ -101,9 +100,9 @@ export default function Dashboard() {
     // Tickets por técnico
     const tecnicos = users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
     const ticketsPorTecnico = tecnicos.map((tecnico) => {
-      const asignados = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.id).length;
-      const resueltos = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.id && t.estado === 'cerrado').length;
-      const pendientes = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.id && t.estado !== 'cerrado').length;
+      const asignados = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.nombre).length;
+      const resueltos = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.nombre && t.estado === 'cerrado').length;
+      const pendientes = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.nombre && t.estado !== 'cerrado').length;
       return {
         tecnico: tecnico.nombre,
         tecnicoId: tecnico.id,
@@ -214,7 +213,7 @@ export default function Dashboard() {
               onChange={(e) => setFiltroCategoria(e.target.value)}
             >
               <MenuItem value="">Todas</MenuItem>
-              {mockCategorias.map((cat) => (
+              {categorias.map((cat) => (
                 <MenuItem key={cat.id} value={cat.nombre}>
                   {cat.nombre}
                 </MenuItem>
@@ -229,9 +228,9 @@ export default function Dashboard() {
               onChange={(e) => setFiltroEdificio(e.target.value)}
             >
               <MenuItem value="">Todos</MenuItem>
-              {mockEdificios.map((edificio) => (
-                <MenuItem key={edificio} value={edificio}>
-                  {edificio}
+              {edificios.map((edificio) => (
+                <MenuItem key={edificio.id} value={edificio.nombre}>
+                  {edificio.nombre}
                 </MenuItem>
               ))}
             </Select>
@@ -258,7 +257,7 @@ export default function Dashboard() {
             >
               <MenuItem value="">Todos</MenuItem>
               {users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin').map((u) => (
-                <MenuItem key={u.id} value={u.id}>
+                <MenuItem key={u.id} value={u.nombre}>
                   {u.nombre}
                 </MenuItem>
               ))}

@@ -8,8 +8,10 @@ export type TicketStatus = 'abierto' | 'en_proceso' | 'cerrado';
 export type TicketPriority = 'baja' | 'media' | 'critica';
 
 // Usuario
+// Todos los IDs del backend son Long autogenerado, excepto el de Ticket
+// (String, generado como TK-YYYYMMDD-XXXX por TicketIdGenerator).
 export interface User {
-  id: string;
+  id: number;
   nombre: string;
   email: string;
   rol: UserRole;
@@ -18,23 +20,33 @@ export interface User {
 
 // Categoría de servicio (RF-17)
 export interface Categoria {
-  id: string;
+  id: number;
   nombre: string;
   oculto?: boolean;
 }
 
 // Subcategoría de servicio (RF-17)
 export interface Subcategoria {
-  id: string;
-  categoriaId: string;
+  id: number;
+  categoriaId: number;
   nombre: string;
   puntaje: number;
   oculto?: boolean;
 }
 
-// Ubicación con puntaje (RF-05, Tabla 14)
+// Edificio (backend: LocationController /edificios)
+export interface Edificio {
+  id: number;
+  numero: number;
+  nombre: string;
+  oculto?: boolean;
+}
+
+// Oficina dentro de un edificio, con puntaje (RF-05, Tabla 14)
+// (antes "Ubicacion" en el mock; en el backend es Office, hija de Building)
 export interface Ubicacion {
-  id: string;
+  id: number;
+  edificioId: number;
   edificio: string;
   nombre: string;
   puntaje: number;
@@ -48,15 +60,18 @@ export interface CantidadEquipos {
 }
 
 // Ticket (RF-02, RF-03, RF-04)
+// puntaje/prioridad/tiempoEstimado los calcula el backend (clase Ticket), no el front.
 export interface Ticket {
   id: string;
-  usuarioId: string;
+  // El backend no expone el id del solicitante en la respuesta del ticket
+  // (solo nombre/correo); usar usuarioEmail para identificarlo.
+  usuarioId?: number;
   usuarioNombre: string;
   usuarioEmail: string;
   categoria: string;
   subcategoria: string;
   ubicacion: string;
-  cantidadEquipos: string;
+  cantidadEquipos: number;
   telefonoContacto: string;
   descripcion: string;
   puntajeTotal: number;

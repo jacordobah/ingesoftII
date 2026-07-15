@@ -1,13 +1,13 @@
 package uifce.support.api.model.user;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record UserResponseDTO(
         Long id,
-        @JsonAlias("nombre")
+        @JsonProperty("nombre")
         String name,
         String email,
-        @JsonAlias("rol")
+        @JsonProperty("rol")
         String role
 ) {
     public UserResponseDTO(User user){

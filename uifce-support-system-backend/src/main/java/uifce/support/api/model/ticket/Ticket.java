@@ -10,7 +10,7 @@ import uifce.support.api.model.user.User;
 
 import java.time.LocalDateTime;
 
-@Table(name = "tikets")
+@Table(name = "tickets")
 @Entity(name = "Ticket")
 @Getter @Setter
 @AllArgsConstructor
@@ -97,7 +97,7 @@ public class Ticket {
             return  "72 HORAS";
         } else if (this.score >= 31 && this.score <= 40) {
             this.priority = Priority.Media;
-            this.responseTime = "5 DÍAS";
+            return "5 DÍAS";
         } else if (this.score >= 41 && this.score <= 50) {
             this.priority = Priority.Media;
             return  "10 DÍAS";

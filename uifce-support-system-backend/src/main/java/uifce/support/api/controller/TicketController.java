@@ -5,17 +5,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import uifce.support.api.model.ticket.assignmentDTO.AssignmentUpdateTecnicalDTO;
 import uifce.support.api.model.ticket.ticketDTO.*;
 import uifce.support.api.service.TicketService;
 
 import java.net.URI;
 
 
-@Controller
-@RestController("/api/v1/tickets")
+@RestController
+@RequestMapping("/api/v1/tickets")
 public class TicketController {
     private final TicketService ticketService;
 
@@ -42,9 +42,9 @@ public class TicketController {
     }
     @PatchMapping("/asignar-tecnico")
     public ResponseEntity<TicketResponseAssignmentDTO> updateTicketTechnical(
-            @RequestBody @Valid TicketUpdateStatusDTO ticketUpdate) {
+            @RequestBody @Valid AssignmentUpdateTecnicalDTO assignmentUpdate) {
 
-        return ResponseEntity.ok(ticketService.updateTicketStatus(ticketUpdate));
+        return ResponseEntity.ok(ticketService.asignarTecnico(assignmentUpdate));
 
     }
 

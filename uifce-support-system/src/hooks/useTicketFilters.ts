@@ -5,7 +5,7 @@ interface TicketFilters {
   estado?: TicketStatus;
   prioridad?: TicketPriority;
   tecnicoId?: string;
-  usuarioId?: string;
+  usuarioId?: number;
   categoria?: string;
   fechaInicio?: Date;
   fechaFin?: Date;

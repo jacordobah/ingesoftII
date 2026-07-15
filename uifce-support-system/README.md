@@ -1,5 +1,41 @@
 # React + TypeScript + Vite
 
+## Docker
+
+El proyecto queda separado en dos contenedores:
+
+- `frontend`: build estatico de React servido con Nginx.
+- `backend`: API Node/Express en el puerto interno `3001`.
+
+Nginx sirve la SPA y reenvia `/api/*` al contenedor `backend`, asi que el navegador solo necesita entrar por el frontend.
+
+```bash
+docker compose up --build -d
+```
+
+URLs locales:
+
+- App: `http://localhost:8080`
+- API via proxy: `http://localhost:8080/api/health`
+
+Variables opcionales:
+
+```bash
+FRONTEND_PORT=8080
+JWT_SECRET=change-me-in-production
+JWT_EXPIRES_IN=8h
+CORS_ORIGIN=http://localhost:8080
+```
+
+Comandos utiles:
+
+```bash
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose down
+```
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

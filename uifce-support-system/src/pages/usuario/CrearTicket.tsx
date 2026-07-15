@@ -12,23 +12,22 @@ import {
   Button,
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
-import { mockCategorias, mockSubcategorias, mockUbicaciones, mockEdificios } from '../../data/mockData';
 import { validatePhone, validateDescription, validateEquipmentCount, validateField } from '../../utils/validation';
 
 /**
  * Componente CrearTicket
- * 
+ *
  * Formulario para crear nuevos tickets de soporte.
- * Calcula automáticamente la prioridad y tiempo estimado
- * basándose en la subcategoría, ubicación y cantidad de equipos.
- * 
+ * La prioridad y el tiempo estimado los calcula el backend
+ * a partir de la subcategoría, oficina y cantidad de equipos.
+ *
  * @example
  * ```tsx
  * <CrearTicket />
  * ```
  */
 export default function CrearTicket() {
-  const { crearTicket } = useApp();
+  const { crearTicket, categorias, subcategorias, edificios, oficinas } = useApp();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -43,12 +42,11 @@ export default function CrearTicket() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categoriaSeleccionada = mockCategorias.find((c) => c.id === formData.categoria);
-  const subcategoriasFiltradas = mockSubcategorias.filter(
-    (s) => s.categoriaId === formData.categoria
+  const subcategoriasFiltradas = subcategorias.filter(
+    (s) => String(s.categoriaId) === formData.categoria
   );
-  const ubicacionesFiltradas = mockUbicaciones.filter(
-    (u) => u.edificio === formData.edificio
+  const ubicacionesFiltradas = oficinas.filter(
+    (u) => String(u.edificioId) === formData.edificio
   );
 
   const handleChange = (field: string, value: string) => {
@@ -106,35 +104,19 @@ export default function CrearTicket() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
-    // Obtener puntajes
-    const subcategoriaSeleccionada = subcategoriasFiltradas.find((s) => s.nombre === formData.subcategoria);
-    const puntajeSubcategoria = subcategoriaSeleccionada?.puntaje || 0;
-    const puntajeUbicacion = ubicacionesFiltradas.find((u) => u.nombre === formData.ubicacion)?.puntaje || 0;
-    
-    // Calcular puntaje de cantidad de equipos basado en el número ingresado
-    const cantidadNum = Number(formData.cantidadEquipos);
-    let puntajeCantidad = 0;
-    if (cantidadNum >= 1 && cantidadNum <= 3) puntajeCantidad = 5;
-    else if (cantidadNum >= 4 && cantidadNum <= 14) puntajeCantidad = 12;
-    else if (cantidadNum >= 15 && cantidadNum <= 30) puntajeCantidad = 20;
-    else if (cantidadNum > 30) puntajeCantidad = 30;
-
-    // RF-02, RF-03, RF-04, RF-05, RF-06: Crear ticket
-    const nuevoTicket = crearTicket({
-      categoria: categoriaSeleccionada?.nombre || '',
-      subcategoria: formData.subcategoria,
-      ubicacion: `${formData.edificio} - ${formData.ubicacion}`,
-      cantidadEquipos: formData.cantidadEquipos,
+    // El backend calcula puntaje, prioridad y tiempo estimado a partir de
+    // subcategoriaId + oficinaId + cantidadEquipos; el front solo envía los ids.
+    const nuevoTicket = await crearTicket({
+      subcategoriaId: Number(formData.subcategoria),
+      oficinaId: Number(formData.ubicacion),
+      cantidadEquipos: Number(formData.cantidadEquipos),
       telefonoContacto: formData.telefonoContacto,
       descripcion: formData.descripcion,
-      puntajeSubcategoria,
-      puntajeUbicacion,
-      puntajeCantidad,
     });
 
     // Navegar a la página de confirmación con el ticket creado
@@ -165,8 +147,8 @@ export default function CrearTicket() {
                   label="Categoría del Servicio"
                   onChange={(e) => handleChange('categoria', e.target.value)}
                 >
-                  {mockCategorias.map((cat) => (
-                    <MenuItem key={cat.id} value={cat.id}>
+                  {categorias.map((cat) => (
+                    <MenuItem key={cat.id} value={String(cat.id)}>
                       {cat.nombre}
                     </MenuItem>
                   ))}
@@ -187,7 +169,7 @@ export default function CrearTicket() {
                   onChange={(e) => handleChange('subcategoria', e.target.value)}
                 >
                   {subcategoriasFiltradas.map((sub) => (
-                    <MenuItem key={sub.id} value={sub.nombre}>
+                    <MenuItem key={sub.id} value={String(sub.id)}>
                       {sub.nombre}
                     </MenuItem>
                   ))}
@@ -207,9 +189,9 @@ export default function CrearTicket() {
                   label="Edificio"
                   onChange={(e) => handleChange('edificio', e.target.value)}
                 >
-                  {mockEdificios.map((edificio) => (
-                    <MenuItem key={edificio} value={edificio}>
-                      {edificio}
+                  {edificios.map((edificio) => (
+                    <MenuItem key={edificio.id} value={String(edificio.id)}>
+                      {edificio.nombre}
                     </MenuItem>
                   ))}
                 </Select>
@@ -229,7 +211,7 @@ export default function CrearTicket() {
                   onChange={(e) => handleChange('ubicacion', e.target.value)}
                 >
                   {ubicacionesFiltradas.map((ub) => (
-                    <MenuItem key={ub.id} value={ub.nombre}>
+                    <MenuItem key={ub.id} value={String(ub.id)}>
                       {ub.nombre}
                     </MenuItem>
                   ))}
