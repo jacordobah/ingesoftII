@@ -46,6 +46,12 @@ public class ErrorHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+
+    // Captura el error de la cuenta inactiva (Lanzado en tu AuthService)
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity handleForbidden(IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getLocalizedMessage()));
+    }
     private record DataExcepcionValidation(String field, String error){
         DataExcepcionValidation(FieldError ferror){
             this(ferror.getField(),ferror.getDefaultMessage());
