@@ -13,9 +13,24 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  logging:
+    level:
+      security: DEBUG
+      SQL: DEBUG
   data:
     web:
       pageable:
         serialization-mode: via_dto
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: "719269115512-eom0psag4ertk4pvufahurt6sk4eijkt.apps.googleusercontent.com"
+            client-secret: "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"
+            scope:
+              - email
+              - profile
+              - openid
 
 
