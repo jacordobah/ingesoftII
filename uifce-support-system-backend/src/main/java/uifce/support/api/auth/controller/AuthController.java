@@ -27,19 +27,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO loginRequestDTO) {
-        try {
-            // Pasamos los datos del DTO a la capa de servicios
-            AuthResponseDTO respuesta = authService.processLogin(loginRequestDTO);
-            return ResponseEntity.ok(respuesta);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Error interno en el servidor"));
-        }
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO loginRequestDTO) {           // Pasamos los datos del DTO a la capa de servicios
+        LoginResponseDTO respuesta = authService.processLogin(loginRequestDTO);
+        return ResponseEntity.ok(respuesta);
     }
 
 }
