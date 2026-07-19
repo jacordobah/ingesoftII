@@ -10,6 +10,7 @@ import {
   Alert,
   Divider,
 } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 import { useApp } from '../../contexts/AppContext';
 import { validateEmail, validateField } from '../../utils/validation';
 
@@ -20,6 +21,11 @@ export default function Login() {
   const [emailError, setEmailError] = useState('');
   const { login } = useApp();
   const navigate = useNavigate();
+
+  const handleGoogleLogin = () => {
+    // Redirigir al endpoint de OAuth2 de Google
+    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +169,27 @@ export default function Login() {
               Iniciar Sesión
             </Button>
           </form>
+
+          <Divider sx={{ my: 3 }}>o</Divider>
+
+          <Button
+            fullWidth
+            variant="outlined"
+            size="large"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleLogin}
+            sx={{
+              py: 1.5,
+              borderColor: '#4285F4',
+              color: '#4285F4',
+              '&:hover': { 
+                borderColor: '#357ae8',
+                backgroundColor: 'rgba(66, 133, 244, 0.04)',
+              },
+            }}
+          >
+            Continuar con Google
+          </Button>
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">

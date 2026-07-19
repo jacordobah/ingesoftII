@@ -22,6 +22,10 @@ public class User {
     private String name;
     @Column(name = "email")
     private String email;
+    @Column(name = "password")
+    private String password;
+    @Column(name = "google_id")
+    private String googleId;
     @Enumerated(EnumType.STRING)
     @Column(name = "rol")
     @JsonAlias("rol")
