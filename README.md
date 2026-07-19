@@ -21,19 +21,19 @@ Sistema de soporte técnico para UIFCE con backend en Spring Boot + Java, base d
 
 ### Requisitos Previos
 
-- Java 21
-- Maven 3.8+
-- Node.js (v18 o superior)
-- MySQL (v8.0 o superior)
+- Java 21 (✅ ya instalado en el sistema)
+- Node.js (v18 o superior) - ✅ v24.16.0 detectado
+- npm (v11 o superior) - ✅ v11.13.0 detectado
+- MySQL (v8.0 o superior) - **Opcional** (puede usar Docker)
+- Maven - **No necesario** (el proyecto incluye Maven Wrapper)
 
 ### Instalación del Backend
 
 ```bash
-# Instalar dependencias de Maven
+# Instalar dependencias de Maven (usando Maven Wrapper incluido)
 ./mvnw clean install
 
-# O usando Maven local
-mvn clean install
+# Nota: No es necesario instalar Maven localmente, el proyecto incluye Maven Wrapper
 ```
 
 ### Instalación del Frontend
@@ -45,28 +45,32 @@ npm install
 
 ### Configuración de Base de Datos
 
-1. Crear base de datos MySQL:
+**Opción 1: Usar Docker (Recomendado)**
+```bash
+docker compose up -d mysql
+```
+
+**Opción 2: MySQL Local**
+1. Instalar MySQL 8.0+
+2. Crear base de datos MySQL:
 ```sql
 CREATE DATABASE uifce_support;
 ```
 
-2. Configurar variables de entorno en `src/main/resources/application.properties`:
+3. Configurar variables de entorno en `src/main/resources/application.yaml`:
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/uifce_support
 spring.datasource.username=root
 spring.datasource.password=tu_password
 ```
 
-3. Las migraciones de Flyway se ejecutan automáticamente al iniciar el backend
+4. Las migraciones de Flyway se ejecutan automáticamente al iniciar el backend
 
 ### Ejecutar el Servidor
 
 **Backend (Spring Boot):**
 ```bash
 ./mvnw spring-boot:run
-
-# O usando Maven local
-mvn spring-boot:run
 ```
 
 **Frontend (React):**
@@ -118,7 +122,7 @@ SPRING_DATASOURCE_PASSWORD=change-me-in-production
 - `PUT /api/v1/categoria` - Actualizar categoría
 - `DELETE /api/v1/categoria/{id}` - Eliminar categoría
 - `GET /api/v1/categoria/{id}/subcategorias` - Obtener subcategorías
-- `POST /api/v1/categoria/{id}/supcategoria` - Crear subcategoría
+- `POST /api/v1/categoria/{id}/subcategoria` - Crear subcategoría
 - `PUT /api/v1/categoria/subcategoria` - Actualizar subcategoría
 - `DELETE /api/v1/categoria/subcategoria/{id}` - Eliminar subcategoría
 
