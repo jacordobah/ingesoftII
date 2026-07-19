@@ -26,7 +26,7 @@ export const ENDPOINTS = {
     update: `${API_URL}/categoria`,
     delete: (id: number) => `${API_URL}/categoria/${id}`,
     getSubcategorias: (categoriaId: number) => `${API_URL}/categoria/${categoriaId}/subcategorias`,
-    createSubcategoria: (categoriaId: number) => `${API_URL}/categoria/${categoriaId}/supcategoria`,
+    createSubcategoria: (categoriaId: number) => `${API_URL}/categoria/${categoriaId}/subcategoria`,
     updateSubcategoria: `${API_URL}/categoria/subcategoria`,
     deleteSubcategoria: (id: number) => `${API_URL}/categoria/subcategoria/${id}`,
   },
