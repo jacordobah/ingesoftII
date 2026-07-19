@@ -23,10 +23,11 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { mockUbicaciones, mockEdificios, mockTickets } from '../../data/mockData';
+import { useApp } from '../../contexts/AppContext';
 
 export default function GestionUbicaciones() {
-  const [edificioSeleccionado, setEdificioSeleccionado] = useState<string | null>(null);
+  const { edificios, oficinas, tickets } = useApp();
+  const [edificioSeleccionado, setEdificioSeleccionado] = useState<number | null>(null);
   const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<Ubicacion | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'edificio' | 'ubicacion'>('ubicacion');
@@ -35,14 +36,15 @@ export default function GestionUbicaciones() {
   const [editOculto, setEditOculto] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  const handleEdificioClick = (edificio: string) => {
-    setEdificioSeleccionado(edificio);
+  const handleEdificioClick = (edificioId: number) => {
+    setEdificioSeleccionado(edificioId);
     setUbicacionSeleccionada(null);
   };
 
-  const handleEditarEdificio = (e: React.MouseEvent, edificio: string) => {
+  const handleEditarEdificio = (e: React.MouseEvent, edificioId: number) => {
     e.stopPropagation();
-    setEditNombre(edificio);
+    const edificio = edificios.find((ed) => ed.id === edificioId);
+    setEditNombre(edificio?.nombre || '');
     setEditPuntaje('');
     setEditOculto(false);
     setModalType('edificio');
@@ -59,11 +61,14 @@ export default function GestionUbicaciones() {
     setModalOpen(true);
   };
 
-  const tieneTicketsAsociados = (ubicacionId: string) => {
-    return mockTickets.some(t => t.ubicacion === ubicacionId);
+  // Los tickets guardan "Edificio - Oficina" como texto, no el id de la oficina.
+  const tieneTicketsAsociados = (ubicacionId: number) => {
+    const oficina = oficinas.find((ub) => ub.id === ubicacionId);
+    if (!oficina) return false;
+    return tickets.some((t) => t.ubicacion === `${oficina.edificio} - ${oficina.nombre}`);
   };
 
-  const handleUbicacionClick = (ubicacion: any) => {
+  const handleUbicacionClick = (ubicacion: Ubicacion) => {
     setUbicacionSeleccionada(ubicacion);
     setEditNombre(ubicacion.nombre);
     setEditPuntaje(ubicacion.puntaje.toString());
@@ -98,11 +103,11 @@ export default function GestionUbicaciones() {
   };
 
   const ubicacionesFiltradas = edificioSeleccionado
-    ? mockUbicaciones.filter((ub) => ub.edificio === edificioSeleccionado)
+    ? oficinas.filter((ub) => ub.edificioId === edificioSeleccionado)
     : [];
 
-  const contarUbicacionesPorEdificio = (edificio: string) => {
-    return mockUbicaciones.filter((ub) => ub.edificio === edificio).length;
+  const contarUbicacionesPorEdificio = (edificioId: number) => {
+    return oficinas.filter((ub) => ub.edificioId === edificioId).length;
   };
 
   return (
@@ -121,11 +126,11 @@ export default function GestionUbicaciones() {
           {/* Lista de edificios */}
           <Box sx={{ width: { xs: '100%', md: '40%' }, borderRight: { md: 1 }, borderColor: 'divider' }}>
             <List sx={{ py: 0 }}>
-              {mockEdificios.map((edificio) => (
-                <ListItem key={edificio} disablePadding>
+              {edificios.map((edificio) => (
+                <ListItem key={edificio.id} disablePadding>
                   <ListItemButton
-                    onClick={() => handleEdificioClick(edificio)}
-                    selected={edificioSeleccionado === edificio}
+                    onClick={() => handleEdificioClick(edificio.id)}
+                    selected={edificioSeleccionado === edificio.id}
                     sx={{
                       '&.Mui-selected': {
                         bgcolor: 'rgba(148, 180, 60, 0.1)',
@@ -136,16 +141,16 @@ export default function GestionUbicaciones() {
                     }}
                   >
                     <ListItemText
-                      primary={edificio}
-                      secondary={`${contarUbicacionesPorEdificio(edificio)} ubicaciones`}
+                      primary={edificio.nombre}
+                      secondary={`${contarUbicacionesPorEdificio(edificio.id)} ubicaciones`}
                       sx={{
                         '& .MuiListItemText-primary': {
-                          fontWeight: edificioSeleccionado === edificio ? 600 : 400,
+                          fontWeight: edificioSeleccionado === edificio.id ? 600 : 400,
                         },
                       }}
                     />
                     <IconButton
-                      onClick={(e) => handleEditarEdificio(e, edificio)}
+                      onClick={(e) => handleEditarEdificio(e, edificio.id)}
                       size="small"
                       sx={{ color: '#94b43c', '&:hover': { color: '#7a9a30', backgroundColor: 'rgba(148, 180, 60, 0.1)' } }}
                     >
@@ -293,7 +298,7 @@ export default function GestionUbicaciones() {
 
             {!isCreating && modalType === 'ubicacion' && (
               <Box sx={{ mt: 3 }}>
-                {tieneTicketsAsociados(ubicacionSeleccionada?.id || '') ? (
+                {tieneTicketsAsociados(ubicacionSeleccionada?.id ?? -1) ? (
                   <Alert severity="warning" sx={{ mt: 2 }}>
                     Esta ubicación tiene tickets asociados. Solo puede ocultarla, no eliminarla.
                   </Alert>

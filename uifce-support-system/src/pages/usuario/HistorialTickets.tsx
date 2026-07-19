@@ -26,7 +26,7 @@ import { useApp } from '../../contexts/AppContext';
 import { formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
 
 export default function HistorialTickets() {
-  const { user, tickets, getTicketsByUsuario, users } = useApp();
+  const { user, tickets, getTicketsByUsuario } = useApp();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -35,14 +35,8 @@ export default function HistorialTickets() {
 
   const misTickets = useMemo(() => {
     if (!user) return [];
-    return getTicketsByUsuario(user.id);
+    return getTicketsByUsuario(user.email);
   }, [user, tickets, getTicketsByUsuario]);
-
-  // Función para obtener el nombre del técnico por ID
-  const getNombreTecnico = useCallback((tecnicoId: string) => {
-    const tecnico = users.find((u) => u.id === tecnicoId);
-    return tecnico ? tecnico.nombre : tecnicoId;
-  }, [users]);
 
   const getStatusColor = useCallback((estado: string) => {
     switch (estado) {
@@ -359,7 +353,7 @@ export default function HistorialTickets() {
                     Técnico Asignado
                   </Typography>
                   <Typography variant="body1">
-                    {getNombreTecnico(selectedTicket.tecnicoAsignado)}
+                    {selectedTicket.tecnicoAsignado}
                   </Typography>
                 </Box>
               )}

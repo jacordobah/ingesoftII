@@ -27,11 +27,20 @@ import {
   CardContent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { mockUsers, mockTickets } from '../../data/mockData';
+import { useApp } from '../../contexts/AppContext';
+import { ENDPOINTS, apiRequest } from '../../config/api';
 
 const ADMIN_PROTEGIDO = 'uniic_bog@unal.edu.co';
 
+// El backend usa 'Usuario'|'Tecnico'|'Administrador'; el front usa
+// 'usuario'|'tecnico'|'admin'.
+const ROL_HACIA_BACKEND: Record<'tecnico' | 'admin', string> = {
+  tecnico: 'Tecnico',
+  admin: 'Administrador',
+};
+
 export default function GestionUsuarios() {
+  const { users, tickets, recargarDatos } = useApp();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<User | null>(null);
@@ -42,8 +51,8 @@ export default function GestionUsuarios() {
   const [eliminarModalOpen, setEliminarModalOpen] = useState(false);
   const [usuarioAEliminar, setUsuarioAEliminar] = useState<User | null>(null);
 
-  const tecnicosYAdmins = mockUsers.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
-  const admins = mockUsers.filter((u) => u.rol === 'admin');
+  const tecnicosYAdmins = users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
+  const admins = users.filter((u) => u.rol === 'admin');
 
   const handleCambiarRol = (usuario: User) => {
     setUsuarioSeleccionado(usuario);
@@ -59,17 +68,24 @@ export default function GestionUsuarios() {
     setModalOpen(true);
   };
 
-  const tieneTicketsAsignados = (usuarioId: string) => {
-    return mockTickets.some(t => t.tecnicoAsignado === usuarioId);
+  const tieneTicketsAsignados = (usuario: User) => {
+    return tickets.some((t) => t.tecnicoAsignado === usuario.nombre);
   };
 
-  const handleEliminarClick = (usuario: any) => {
+  const handleEliminarClick = (usuario: User) => {
     setUsuarioAEliminar(usuario);
     setEliminarModalOpen(true);
   };
 
-  const handleEliminarConfirmar = () => {
-    console.log('Eliminar usuario:', usuarioAEliminar?.id);
+  const handleEliminarConfirmar = async () => {
+    if (!usuarioAEliminar) return;
+    try {
+      await apiRequest(ENDPOINTS.usuarios.delete(usuarioAEliminar.id), { method: 'DELETE' });
+      await recargarDatos();
+    } catch (error) {
+      console.error('No se pudo eliminar el usuario:', error);
+      alert('No se pudo eliminar el usuario.');
+    }
     setEliminarModalOpen(false);
     setUsuarioAEliminar(null);
   };
@@ -79,17 +95,30 @@ export default function GestionUsuarios() {
     setUsuarioAEliminar(null);
   };
 
-  const handleGuardar = () => {
+  const handleGuardar = async () => {
     if (isCreating) {
-      // Crear nuevo usuario
-      console.log('Crear usuario:', { email: nuevoEmail, rol: nuevoRol });
+      try {
+        await apiRequest(ENDPOINTS.usuarios.create, {
+          method: 'POST',
+          body: JSON.stringify({ nombre: nuevoEmail.split('@')[0], email: nuevoEmail, rol: ROL_HACIA_BACKEND[nuevoRol] }),
+        });
+        await recargarDatos();
+      } catch (error) {
+        console.error('No se pudo crear el usuario:', error);
+        alert('No se pudo crear el usuario.');
+        return;
+      }
     } else {
       // Validación: debe haber al menos un admin
       if (nuevoRol !== 'admin' && admins.length === 1 && admins[0].id === usuarioSeleccionado?.id) {
         alert('El sistema debe tener al menos un usuario administrador.');
         return;
       }
-      console.log('Cambiar rol:', { userId: usuarioSeleccionado?.id, nuevoRol });
+      // El backend no expone un endpoint para cambiar el rol de un usuario
+      // existente (UserController solo tiene crear/listar/eliminar).
+      console.warn('Cambiar rol no esta soportado por el backend todavia.');
+      alert('Cambiar el rol de un usuario existente no esta soportado por el backend todavia.');
+      return;
     }
     setModalOpen(false);
   };
@@ -365,7 +394,7 @@ export default function GestionUsuarios() {
               ¿Estás seguro de que deseas eliminar al usuario <strong>{usuarioAEliminar?.nombre}</strong> ({usuarioAEliminar?.email})?
             </Typography>
             
-            {tieneTicketsAsignados(usuarioAEliminar?.id || '') && (
+            {usuarioAEliminar && tieneTicketsAsignados(usuarioAEliminar) && (
               <Alert severity="warning" sx={{ mt: 2 }}>
                 Este técnico tiene tickets asignados. No se recomienda eliminar usuarios con tickets activos.
               </Alert>

@@ -1,36 +1,5 @@
-import type { TicketPriority } from '../types';
-import { mockTiemposRespuesta } from '../data/mockData';
-
-// RF-04: Generador de ID único para tickets
-export function generateTicketId(): string {
-  const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 9000) + 1000;
-  return `TK-${year}-${random}`;
-}
-
-// RF-05: Cálculo automático de prioridad según matriz de puntajes
-export function calcularPrioridad(puntajeTotal: number): TicketPriority {
-  if (puntajeTotal >= 51) return 'critica';
-  if (puntajeTotal >= 31) return 'media';
-  return 'baja';
-}
-
-// RF-06: Asignación de tiempo estimado de respuesta
-export function calcularTiempoRespuesta(puntajeTotal: number): string {
-  const tiempo = mockTiemposRespuesta.find(
-    (t) => puntajeTotal >= t.puntajeMinimo && puntajeTotal <= t.puntajeMaximo
-  );
-  return tiempo?.tiempo || '48 horas';
-}
-
-// Cálculo de puntaje total según matriz (RF-05)
-export function calcularPuntajeTotal(
-  puntajeSubcategoria: number,
-  puntajeUbicacion: number,
-  puntajeCantidad: number
-): number {
-  return puntajeSubcategoria + puntajeUbicacion + puntajeCantidad;
-}
+// Nota: prioridad, tiempo estimado y puntaje total ya no se calculan aquí.
+// El backend (clase Ticket) los calcula al crear/actualizar el ticket.
 
 // Formatear fecha para mostrar
 export function formatearFecha(fecha: Date): string {
