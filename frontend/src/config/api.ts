@@ -1,5 +1,5 @@
 // Configuración de la API
-// Backend real: Spring Boot (uifce-support-system-backend), rutas bajo /api/v1.
+// Backend real: Spring Boot, rutas bajo /api/v1.
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
 // Endpoints
