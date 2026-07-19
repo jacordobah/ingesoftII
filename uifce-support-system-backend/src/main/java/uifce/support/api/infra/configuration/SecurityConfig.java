@@ -35,17 +35,17 @@ public class SecurityConfig {
         this.userRepository = userRepository;
     }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().authenticated()
-                );
+            @Bean
+            public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                        .cors(Customizer.withDefaults())
+                        .csrf(AbstractHttpConfigurer::disable)
+                        .authorizeHttpRequests(auth -> auth
+                                .requestMatchers("/api/auth/**").permitAll()
+                                .anyRequest().authenticated()
+                        );
 
-        return http.build();
-    }
+                return http.build();
+            }
 
 }
