@@ -2,6 +2,7 @@ package uifce.support.api.auth.service;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import uifce.support.api.auth.authDTO.LoginRequestDTO;
 import uifce.support.api.auth.authDTO.LoginResponseDTO;
@@ -14,10 +15,12 @@ import java.util.Optional;
 @Service
 public class AuthService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public LoginResponseDTO processLogin(LoginRequestDTO loginRequestDTO) {
@@ -31,14 +34,12 @@ public class AuthService {
             if (!user.isActive()) {
                 throw new IllegalStateException("Usuario inactivo en el sistema");
             }
+            // Validar contraseña
+            if (!passwordEncoder.matches(loginRequestDTO.password(), user.getPassword())) {
+                throw new IllegalArgumentException("Credenciales inválidas");
+            }
         } else {
-            user = new User();
-            user.setEmail(loginRequestDTO.email());
-            user.setName(loginRequestDTO.name() != null ? loginRequestDTO.name() : loginRequestDTO.email().split("@")[0]);
-            user.setRole(Role.Usuario); // Rol por defecto del ENUM
-            user.setActive(true);
-
-            userRepository.save(user);
+            throw new IllegalArgumentException("Usuario no encontrado");
         }
 
         String tokenJWT = "jwt-simulado-unal-" + user.getId();
