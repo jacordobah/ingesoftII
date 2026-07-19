@@ -12,7 +12,7 @@ export default function Layout({ children }: LayoutProps) {
   const { user } = useApp();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const showSidebar = user?.rol === 'usuario' || user?.rol === 'tecnico' || user?.rol === 'admin';
+  const showSidebar = user?.rol === 'Usuario' || user?.rol === 'Tecnico' || user?.rol === 'Administrador';
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () => {

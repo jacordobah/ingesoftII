@@ -3,10 +3,11 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
 // Endpoints
-// NOTA: el backend Java no tiene AuthController (no hay login/JWT) ni
-// AuditController implementado. `auditoria.*` seguira sin datos reales hasta
-// que se implemente esa parte del backend.
+// NOTA: el backend Java ahora tiene AuthController implementado con login/JWT.
 export const ENDPOINTS = {
+  auth: {
+    login: `${API_URL.replace('/api/v1', '/api')}/auth/login`,
+  },
   usuarios: {
     getAll: `${API_URL}/usuarios`,
     getById: (id: number) => `${API_URL}/usuarios/${id}`,

@@ -207,27 +207,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void recargarMatrizPuntajes();
   }, [refreshData, recargarMatrizPuntajes]);
 
-  // No existe backend de autenticacion (sin AuthController, sin password ni
-  // JWT): se busca un usuario real ya creado por su email; si no existe se
-  // crea como usuario real nuevo (rol 'usuario'), igual que antes se permitia
-  // cualquier correo institucional. La contrasena no se valida en el backend.
+  // Usa el endpoint real de autenticación que valida contraseñas y devuelve el usuario con su rol
   const login = async (email: string, password: string): Promise<boolean> => {
-    void password; // el backend actual no valida contrasena (ver nota arriba)
     if (!email.endsWith('@unal.edu.co')) return false;
 
     try {
-      let encontrado = users.find((u) => u.email === email);
+      const response = await apiRequest<{ user: User; token: string }>(ENDPOINTS.auth.login, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!encontrado) {
-        encontrado = await apiRequest<User>(ENDPOINTS.usuarios.create, {
-          method: 'POST',
-          body: JSON.stringify({ nombre: email.split('@')[0], email, rol: 'Usuario' }),
-        });
-        setUsers((current) => [...current, encontrado as User]);
-      }
-
-      setUser(encontrado);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(encontrado));
+      setUser(response.user);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.user));
       return true;
     } catch (error) {
       console.error('No se pudo iniciar sesion:', error);
