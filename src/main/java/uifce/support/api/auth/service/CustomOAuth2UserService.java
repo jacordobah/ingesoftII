@@ -41,7 +41,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         
         // Crear OAuth2User con authorities del usuario
         return new DefaultOAuth2User(
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRol().name())),
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
                 oauth2User.getAttributes(),
                 "sub"
         );
@@ -49,11 +49,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     
     private User createNewUser(String email, String name, String googleId) {
         User user = new User();
-        user.setNombre(name);
+        user.setName(name);
         user.setEmail(email);
         user.setGoogleId(googleId);
-        user.setRol(Role.Usuario); // Por defecto rol de usuario
-        user.setActivo(true);
+        user.setRole(Role.Usuario); // Por defecto rol de usuario
+        user.setActive(true);
         user.setPassword("OAUTH_USER"); // Placeholder para usuarios OAuth
         return userRepository.save(user);
     }

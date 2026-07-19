@@ -16,6 +16,9 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
+        ddl-auto: create-drop
+  flyway:
+    enabled: false
   logging:
     level:
       security: DEBUG
