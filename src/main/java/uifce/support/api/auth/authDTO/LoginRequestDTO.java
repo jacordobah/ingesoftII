@@ -9,8 +9,6 @@ public record LoginRequestDTO(
         String email,
         @JsonAlias("password")
         @NotBlank(message = "La contraseña es requerida")
-        String password,
-        @JsonAlias("nombre")
-        String name
+        String password
 ) {
 }
