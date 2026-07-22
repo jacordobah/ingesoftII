@@ -47,7 +47,7 @@ if (-not (Test-DockerReady)) {
         Write-Host "==> Docker Desktop no esta corriendo, iniciandolo..."
         Start-Process -FilePath $dockerDesktopPath
     } else {
-        Write-Warning ("No se encontro Docker Desktop en '" + $dockerDesktopPath + "'. Iniciealo manualmente.")
+        Write-Warning ("No se encontro Docker Desktop en '" + $dockerDesktopPath + "'. Iniciala manualmente.")
     }
     Write-Host "==> Esperando a que el daemon de Docker responda..."
     if (-not (Wait-DockerReady -TimeoutSec 120 -IntervalSec 3)) {
