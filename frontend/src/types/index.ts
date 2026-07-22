@@ -1,5 +1,5 @@
 // Roles de usuario (RF-32) - coinciden con el backend Java
-export type UserRole = 'Usuario' | 'Tecnico' | 'Administrador';
+export type UserRole = 'Usuario' | 'Tecnico' | 'Administrador' | 'admin' | 'tecnico' | 'usuario';
 
 // Estados del ticket (RF-13)
 export type TicketStatus = 'abierto' | 'en_proceso' | 'cerrado';

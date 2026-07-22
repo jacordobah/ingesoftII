@@ -1,12 +1,15 @@
-FROM node:22-alpine AS runtime
-
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
-ENV NODE_ENV=production
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline
+COPY src ./src
+RUN ./mvnw package -DskipTests
 
-COPY package*.json ./
-RUN npm ci --omit=dev
-
-COPY backend ./backend
-
-EXPOSE 3001
-CMD ["node", "backend/src/server.js"]
+FROM eclipse-temurin:21-jre-alpine AS runtime
+RUN apk add --no-cache curl
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
