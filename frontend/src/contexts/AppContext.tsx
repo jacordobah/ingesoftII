@@ -33,6 +33,9 @@ interface AppContextType {
   isAuthenticated: boolean;
 
   login: (email: string, password: string) => Promise<boolean>;
+  // Usado tras el redirect de login con Google: ya hay sesion en el backend
+  // (cookie), solo falta reflejar ese usuario en el estado del front.
+  setSessionUser: (user: User) => void;
   logout: () => void;
 
   crearTicket: (data: CrearTicketData) => Promise<Ticket>;
@@ -203,9 +206,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     void refreshData();
     void recargarMatrizPuntajes();
-  }, [refreshData, recargarMatrizPuntajes]);
+  }, [isAuthenticated, refreshData, recargarMatrizPuntajes]);
 
   // Usa el endpoint real de autenticación que valida contraseñas y devuelve el usuario con su rol
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -224,6 +228,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.error('No se pudo iniciar sesion:', error);
       return false;
     }
+  };
+
+  const setSessionUser = (nextUser: User) => {
+    setUser(nextUser);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
   };
 
   const logout = () => {
@@ -328,6 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         oficinas,
         isAuthenticated,
         login,
+        setSessionUser,
         logout,
         crearTicket,
         asignarTicket,

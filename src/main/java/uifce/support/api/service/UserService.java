@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import uifce.support.api.model.user.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class UserService {
@@ -35,6 +36,12 @@ public class UserService {
 
     public UserResponseDTO findById(Long id) {
         User user = userRepository.getReferenceById(id);
+        return new UserResponseDTO(user);
+    }
+
+    public UserResponseDTO findByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado: " + email));
         return new UserResponseDTO(user);
     }
 

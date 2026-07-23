@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy loading de componentes para code splitting
 const Login = lazy(() => import('./pages/auth/Login'));
+const OAuthCallback = lazy(() => import('./pages/auth/OAuthCallback'));
 const CrearTicket = lazy(() => import('./pages/usuario/CrearTicket'));
 const HistorialTickets = lazy(() => import('./pages/usuario/HistorialTickets'));
 const ConfirmacionTicket = lazy(() => import('./pages/usuario/ConfirmacionTicket'));
@@ -48,6 +49,8 @@ function App() {
               <Routes>
                 {/* Ruta pública de login */}
                 <Route path="/login" element={<Login />} />
+                {/* Destino del redirect de login con Google */}
+                <Route path="/auth/callback" element={<OAuthCallback />} />
 
                 {/* Rutas protegidas con Layout */}
                 <Route element={<ProtectedRoute><Layout><Outlet /></Layout></ProtectedRoute>}>

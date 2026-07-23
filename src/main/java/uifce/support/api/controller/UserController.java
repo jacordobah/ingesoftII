@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import uifce.support.api.model.user.UserRecordDTO;
@@ -41,6 +43,15 @@ public class UserController {
     @GetMapping("/usuarios_registrados")
     public ResponseEntity<Page<UserResponseDTO>> findAllUserByUser(Pageable pag) {
         return ResponseEntity.ok(userService.findAllUserByUser(pag));
+    }
+
+    // Usuario autenticado en la sesión actual. Lo usa el frontend justo
+    // despues del redirect de login con Google, donde solo existe la cookie
+    // de sesion de Spring Security (no hay JSON de login que leer).
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> me(Authentication authentication) {
+        String email = ((OAuth2User) authentication.getPrincipal()).getAttribute("email");
+        return ResponseEntity.ok(userService.findByEmail(email));
     }
 
     @GetMapping("/{id}")
