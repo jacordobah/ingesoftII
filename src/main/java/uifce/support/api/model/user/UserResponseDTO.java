@@ -11,6 +11,9 @@ public record UserResponseDTO(
         String role
 ) {
     public UserResponseDTO(User user){
-       this(user.getId(), user.getName(), user.getEmail(), user.getRole().toString());
+       this(user.getId(), user.getName(), user.getEmail(), user.getRole().toString().toLowerCase());
+    }
+    public UserResponseDTO(User user, String role){
+        this(user.getId(), user.getName(), user.getEmail(), role);
     }
 }

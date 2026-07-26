@@ -8,17 +8,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import uifce.support.api.model.user.Role;
-import uifce.support.api.model.user.User;
+import uifce.support.api.auth.service.CustomOAuth2UserService;
 import uifce.support.api.model.user.UserRepository;
 
 
@@ -26,15 +17,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 @EnableMethodSecurity
-public class SecurityConfig {
+public class    SecurityConfig {
     private final UserRepository userRepository;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Autowired
-    public SecurityConfig(UserRepository userRepository) {
+    public SecurityConfig(UserRepository userRepository, CustomOAuth2UserService customOAuth2UserService) {
         this.userRepository = userRepository;
+        this.customOAuth2UserService = customOAuth2UserService;
     }
 
     @Bean
@@ -50,16 +43,13 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
-                        .defaultSuccessUrl("/api/v1/usuarios", true)
+                        .defaultSuccessUrl("/api/auth/google-success", true)
                         .failureUrl("/login?error=true")
+                        .userInfoEndpoint(userInfo ->
+                                userInfo.userService(customOAuth2UserService))
                 );
 
         return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
 }

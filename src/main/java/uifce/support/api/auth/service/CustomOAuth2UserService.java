@@ -12,6 +12,7 @@ import uifce.support.api.model.user.Role;
 import uifce.support.api.model.user.User;
 import uifce.support.api.model.user.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
 
@@ -28,7 +29,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = oauth2User.getAttribute("email");
         String name = oauth2User.getAttribute("name");
         String googleId = oauth2User.getAttribute("sub");
-        
+
+        if (email == null || !email.endsWith("@unal.edu.co")) {
+            throw new OAuth2AuthenticationException(
+                    new org.springframework.security.oauth2.core.OAuth2Error("invalid_domain"),
+                    "Acceso denegado. Se requiere correo institucional @unal.edu.co"
+            );
+        }
+
         // Buscar o crear usuario
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> createNewUser(email, name, googleId));
@@ -41,7 +49,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         
         // Crear OAuth2User con authorities del usuario
         return new DefaultOAuth2User(
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name())),
                 oauth2User.getAttributes(),
                 "sub"
         );
@@ -55,6 +63,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         user.setRole(Role.Usuario); // Por defecto rol de usuario
         user.setActive(true);
         user.setPassword("OAUTH_USER"); // Placeholder para usuarios OAuth
+        user.setCreationDate(LocalDateTime.now());
+        user.setUpdateDate(LocalDateTime.now());
         return userRepository.save(user);
     }
 }

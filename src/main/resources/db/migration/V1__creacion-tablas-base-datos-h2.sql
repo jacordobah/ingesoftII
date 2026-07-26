@@ -114,7 +114,7 @@ CREATE TABLE auditoria (
     usuario_id BIGINT NOT NULL,
     usuario_rol VARCHAR(20) NOT NULL,
     accion VARCHAR(50) NOT NULL,
-    detalles CLOB,
+    detalles JSON,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -130,5 +130,5 @@ CREATE INDEX idx_accion ON auditoria(accion);
 CREATE INDEX idx_fecha_auditoria ON auditoria(fecha);
 
 -- Insertar usuario admin por defecto
-INSERT INTO usuarios (nombre, email, password, rol, activo) 
-VALUES ('Administrador', 'uniic_bog@unal.edu.co', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Administrador', TRUE);
+INSERT INTO usuarios (nombre, email, password, rol, activo)
+VALUES ('Administrador', 'uniic_bog@unal.edu.co', '$2a$10$Oro7WJBYzj2adTMY5EaimudPjLm6oEhESZwyS0nL7mt9aVigm0srO', 'Administrador', TRUE);
