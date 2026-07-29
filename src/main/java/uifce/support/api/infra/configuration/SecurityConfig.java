@@ -1,5 +1,6 @@
 package uifce.support.api.infra.configuration;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,10 +36,18 @@ public class    SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // Si la petición es de API, respondemos 401 en vez de redirigir a /login
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"status\": 401, \"error\": \"No autorizado\", \"message\": \"Falta token JWT de sesión.\"}");
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/usuarios").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/login").permitAll()
+                        .requestMatchers("/api/v1/usuarios").hasAnyRole("Administrador", "Tecnico")
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

@@ -31,6 +31,7 @@ interface AppContextType {
   edificios: Edificio[];
   oficinas: Ubicacion[];
   isAuthenticated: boolean;
+  loading: boolean;
 
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -149,6 +150,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [subcategorias, setSubcategorias] = useState<Subcategoria[]>([]);
   const [edificios, setEdificios] = useState<Edificio[]>([]);
   const [oficinas, setOficinas] = useState<Ubicacion[]>([]);
+  // nuevo estado para esperar peticion login
+  const [loading, setLoading] = useState<boolean>(true);
 
   const isAuthenticated = user !== null;
 
@@ -203,10 +206,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refreshData();
-    void recargarMatrizPuntajes();
-  }, [refreshData, recargarMatrizPuntajes]);
+    const inicializarApp = async () => {
+      // 🕵️ INTERCEPTOR DIRECTO DE GOOGLE OAUTH2
+      // Capturamos los datos únicamente si el navegador aterrizó en la ruta oficial de éxito
+      if (window.location.pathname.includes('/login-success')) {
+        const params = new URLSearchParams(window.location.search);
+        const tokenDeGoogle = params.get('token');
+        const roleDeGoogle = params.get('role'); // Recibe tus minúsculas de la rama estable
 
+        if (tokenDeGoogle) {
+          // 1. Guardamos el token en la clave exacta que busca api.ts
+          localStorage.setItem('token', tokenDeGoogle);
+
+          // 2. Creamos un objeto de usuario provisional con el rol correcto
+          const usuarioProvisional = {
+            id: params.get('id') ? Number(params.get('id')) : 0,
+            rol: roleDeGoogle ? roleDeGoogle.toLowerCase() : 'usuario',
+            email: '',
+            nombre: 'Usuario UNAL'
+          };
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(usuarioProvisional));
+          setUser(usuarioProvisional);
+
+          // 3. Forzamos una redirección nativa limpia para destruir los parámetros de la URL
+          window.location.href = '/';
+          return;
+        }
+      }
+
+      // Control para la ruta de éxito intermedia si aún no llegan parámetros
+      if (window.location.pathname.includes('/login-success')) {
+        setLoading(false);
+        return;
+      }
+
+      // 4. Flujo de carga normal del sistema (Login tradicional o recargas dentro del Dashboard)
+      try {
+        await refreshData();
+        await recargarMatrizPuntajes();
+      } catch (e) {
+        console.error("Sincronización inicial contenida:", e);
+      } finally {
+        setLoading(false); // Apagamos el loading de forma segura pase lo que pase
+      }
+    };
+
+    void inicializarApp();
+  }, [refreshData, recargarMatrizPuntajes]);
   // Usa el endpoint real de autenticación que valida contraseñas y devuelve el usuario con su rol
   const login = async (email: string, password: string): Promise<boolean> => {
     if (!email.endsWith('@unal.edu.co')) return false;
@@ -327,6 +373,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         edificios,
         oficinas,
         isAuthenticated,
+        loading,
         login,
         logout,
         crearTicket,
@@ -344,10 +391,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useApp() {
+
+function useApp() {
   const context = useContext(AppContext);
   if (context === undefined) {
     throw new Error('useApp must be used within an AppProvider');
   }
   return context;
 }
+export { useApp };
+
+//export final class AppContextUtils {}
