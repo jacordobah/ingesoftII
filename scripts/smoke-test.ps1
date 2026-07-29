@@ -76,6 +76,17 @@ function New-AuthenticatedSession {
     return $session
 }
 
+function Assert-SpaRoute {
+    param([string]$Path)
+    $response = Invoke-WebRequest -Uri "$BaseUrl$Path" -UseBasicParsing
+    if ($response.StatusCode -ne 200 -or $response.Content -notmatch '<div id="root"') {
+        throw "La ruta SPA $Path no devolvio la aplicacion"
+    }
+    $script:Passed++
+    Write-Host "[OK] SPA $Path -> 200"
+    return $response
+}
+
 function Invoke-Mysql {
     param([string]$Sql)
     $passwordArgument = "-p$MysqlPassword"
@@ -85,6 +96,32 @@ function Invoke-Mysql {
 
 try {
     Write-Host "== UIFCE smoke test: $($script:Tag) =="
+
+    $index = Assert-SpaRoute "/login"
+    foreach ($route in @(
+        "/auth/callback",
+        "/usuario/nuevo",
+        "/usuario/confirmacion",
+        "/usuario/historial",
+        "/tecnico/cola",
+        "/tecnico/asignaciones",
+        "/admin/dashboard",
+        "/admin/cola",
+        "/admin/auditoria",
+        "/admin/categorias",
+        "/admin/ubicaciones",
+        "/admin/usuarios"
+    )) {
+        Assert-SpaRoute $route | Out-Null
+    }
+    $mainScript = [regex]::Match($index.Content, 'src="([^"]+\.js)"').Groups[1].Value
+    if (!$mainScript) { throw "index.html no referencia el bundle JavaScript" }
+    $asset = Invoke-WebRequest -Uri "$BaseUrl$mainScript" -UseBasicParsing
+    if ($asset.StatusCode -ne 200 -or $asset.Headers["Content-Type"] -notmatch "javascript") {
+        throw "El bundle JavaScript principal no esta disponible"
+    }
+    $script:Passed++
+    Write-Host "[OK] ASSET $mainScript -> 200"
 
     $anonymous = New-Object Microsoft.PowerShell.Commands.WebRequestSession
     Invoke-Api -Session $anonymous -Method GET -Path "/api/v1/categoria" -Body $null -Expected @(401) | Out-Null
