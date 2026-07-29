@@ -58,25 +58,31 @@ function App() {
                   <Route index element={<RoleBasedRedirect />} />
 
                   {/* Rutas de usuario */}
-                  <Route path="usuario/nuevo" element={<CrearTicket />} />
-                  <Route path="usuario/confirmacion" element={<ConfirmacionTicket />} />
-                  <Route path="usuario/historial" element={<HistorialTickets />} />
+                  <Route element={<ProtectedRoute allowedRoles={['Usuario']}><Outlet /></ProtectedRoute>}>
+                    <Route path="usuario/nuevo" element={<CrearTicket />} />
+                    <Route path="usuario/confirmacion" element={<ConfirmacionTicket />} />
+                    <Route path="usuario/historial" element={<HistorialTickets />} />
+                  </Route>
 
                   {/* Rutas de técnico */}
-                  <Route path="tecnico/cola" element={<ColaTickets />} />
-                  <Route path="tecnico/asignaciones" element={<MisAsignaciones />} />
+                  <Route element={<ProtectedRoute allowedRoles={['Tecnico']}><Outlet /></ProtectedRoute>}>
+                    <Route path="tecnico/cola" element={<ColaTickets />} />
+                    <Route path="tecnico/asignaciones" element={<MisAsignaciones />} />
+                  </Route>
 
                   {/* Rutas de admin */}
-                  <Route path="admin/dashboard" element={<Dashboard />} />
-                  <Route path="admin/cola" element={<ColaTickets />} />
-                  <Route path="admin/cola-tickets" element={<ColaTickets />} />
-                  <Route path="admin/auditoria" element={<Auditoria />} />
-                  <Route path="admin/categorias" element={<GestionCategorias />} />
-                  <Route path="admin/ubicaciones" element={<GestionUbicaciones />} />
-                  <Route path="admin/usuarios" element={<GestionUsuarios />} />
-                  <Route path="admin/matriz" element={<ColaTickets />} />
-                  <Route path="admin/metricas" element={<ColaTickets />} />
-                  <Route path="admin/tickets" element={<ColaTickets />} />
+                  <Route element={<ProtectedRoute allowedRoles={['Administrador']}><Outlet /></ProtectedRoute>}>
+                    <Route path="admin/dashboard" element={<Dashboard />} />
+                    <Route path="admin/cola" element={<ColaTickets />} />
+                    <Route path="admin/cola-tickets" element={<ColaTickets />} />
+                    <Route path="admin/auditoria" element={<Auditoria />} />
+                    <Route path="admin/categorias" element={<GestionCategorias />} />
+                    <Route path="admin/ubicaciones" element={<GestionUbicaciones />} />
+                    <Route path="admin/usuarios" element={<GestionUsuarios />} />
+                    <Route path="admin/matriz" element={<ColaTickets />} />
+                    <Route path="admin/metricas" element={<ColaTickets />} />
+                    <Route path="admin/tickets" element={<ColaTickets />} />
+                  </Route>
                 </Route>
 
                 {/* Ruta por defecto */}
@@ -96,11 +102,11 @@ function RoleBasedRedirect() {
   if (!user) return <Navigate to="/login" replace />;
 
   switch (user.rol) {
-    case 'usuario':
+    case 'Usuario':
       return <Navigate to="/usuario/nuevo" replace />;
-    case 'tecnico':
+    case 'Tecnico':
       return <Navigate to="/tecnico/cola" replace />;
-    case 'admin':
+    case 'Administrador':
       return <Navigate to="/admin/dashboard" replace />;
     default:
       return <Navigate to="/usuario/nuevo" replace />;

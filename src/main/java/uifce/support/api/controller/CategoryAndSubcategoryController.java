@@ -3,6 +3,7 @@ package uifce.support.api.controller;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import uifce.support.api.model.category.categoryDTO.CategoryRecordDTO;
@@ -29,6 +30,7 @@ public class CategoryAndSubcategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<CategoryResponseDetailDTO> recordCategory(@RequestBody @Valid CategoryRecordDTO categoryRecord,
                                                                     UriComponentsBuilder uriBuilder) {
         CategoryResponseDetailDTO responseDTO = catAndSubbService.recordCategory(categoryRecord);
@@ -36,7 +38,8 @@ public class CategoryAndSubcategoryController {
         return ResponseEntity.created(url).body(responseDTO);
     }
 
-    @PostMapping("/{id}/supcategoria")
+    @PostMapping("/{id}/subcategoria")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<SubcategoryResponseDetailDTO> recordCategory(@PathVariable Long id, @RequestBody @Valid SubcategoryRecordDTO subcategoryRecord,
                                                                     UriComponentsBuilder uriBuilder) {
         SubcategoryResponseDetailDTO responseDTO = catAndSubbService.recordSubcategory(id,subcategoryRecord);
@@ -65,22 +68,26 @@ public class CategoryAndSubcategoryController {
     }
 
     @PutMapping
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<CategoryResponseDTO> updateCategory(@RequestBody @Valid CategoryUpdateDTO categoryUpdate){
         return ResponseEntity.ok(catAndSubbService.updateCategory(categoryUpdate));
     }
 
     @PutMapping("/subcategoria")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<SubcategoryResponseDTO> updateSubcategory(@RequestBody @Valid SubcategoryUpdateDTO officeUpdate){
         return ResponseEntity.ok(catAndSubbService.updateSubcategory(officeUpdate));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity deleteCategory(@PathVariable Long id){
         catAndSubbService.disableCategory(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/subcategoria/{id}")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity deleteSubcategory(@PathVariable Long id){
         catAndSubbService.disableSubcategory(id);
         return ResponseEntity.noContent().build();

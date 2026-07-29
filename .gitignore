@@ -100,7 +100,7 @@ out/
 .env.production.local
 server/.env
 frontend/.env
-src/main/resources/application.yaml
+src/main/resources/application-local.yaml
 
 # OS files
 .DS_Store
@@ -114,6 +114,7 @@ Thumbs.db
 desktop.ini
 
 # Temporary files
+tmp/
 *.tmp
 *.temp
 *.swp

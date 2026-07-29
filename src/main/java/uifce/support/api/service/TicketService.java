@@ -45,8 +45,9 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketResponseRecordDTO createTicket(TicketRecordDTO ticketRecord) {
-        User user = entityValidator.findOrThrow(userRepository, ticketRecord.userId(), "usuarId");
+    public TicketResponseRecordDTO createTicket(TicketRecordDTO ticketRecord, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario autenticado no encontrado"));
         Subcategory subcategory = entityValidator.findOrThrow(subcategoryRepository, ticketRecord.subcategoryId(),
                 "subcategoriaId");
         Office office = entityValidator.findOrThrow(officeRepository, ticketRecord.officeId(), "oficinaId");
@@ -56,9 +57,10 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketResponseAssignmentDTO updateTicketStatus(TicketUpdateStatusDTO ticketUpdate) {
+    public TicketResponseAssignmentDTO updateTicketStatus(TicketUpdateStatusDTO ticketUpdate, String email) {
         Ticket ticket = entityValidator.findOrThrow(ticketRepository, ticketUpdate.id(), "ticketId");
-        User user = entityValidator.findOrThrow(userRepository, ticketUpdate.tecnicoId(),  "userId");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario autenticado no encontrado"));
 
         Status nextStatus = Status.valueOf(ticketUpdate.status());
         Status currentStatus = ticket.getStatus();
@@ -95,7 +97,7 @@ public class TicketService {
             }
         }
         var assigmentAux = new Assignments();
-        return new TicketResponseAssignmentDTO((ticketRepository.save(ticketRepository.save(ticket))),assigmentAux);
+        return new TicketResponseAssignmentDTO(ticketRepository.save(ticket), assigmentAux);
     }
 
     @Transactional
@@ -111,8 +113,10 @@ public class TicketService {
     }
 
    // @Transactional
-    public Page<TicketResponseAssignmentDTO> getAllTickets(Pageable pageable) {
-        Page<Ticket> ticketPage = ticketRepository.findAll(pageable);
+    public Page<TicketResponseAssignmentDTO> getTickets(Pageable pageable, String email, boolean canViewAll) {
+        Page<Ticket> ticketPage = canViewAll
+                ? ticketRepository.findAll(pageable)
+                : ticketRepository.findByUserEmail(email, pageable);
         return ticketPage.map(ticket -> {
             List<Assignments> latest = assignmentsRepositoty.findLatestAssignment(ticket.getId(), PageRequest.of(0, 1));
             String technicianName = latest.isEmpty() ? "undefined" : latest.getFirst().getUser().getName();

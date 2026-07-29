@@ -98,7 +98,7 @@ export default function Dashboard() {
       : 0;
 
     // Tickets por técnico
-    const tecnicos = users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
+    const tecnicos = users.filter((u) => u.rol === 'Tecnico' || u.rol === 'Administrador');
     const ticketsPorTecnico = tecnicos.map((tecnico) => {
       const asignados = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.nombre).length;
       const resueltos = ticketsFiltrados.filter((t) => t.tecnicoAsignado === tecnico.nombre && t.estado === 'cerrado').length;
@@ -256,7 +256,7 @@ export default function Dashboard() {
               onChange={(e) => setFiltroTecnico(e.target.value)}
             >
               <MenuItem value="">Todos</MenuItem>
-              {users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin').map((u) => (
+              {users.filter((u) => u.rol === 'Tecnico' || u.rol === 'Administrador').map((u) => (
                 <MenuItem key={u.id} value={u.nombre}>
                   {u.nombre}
                 </MenuItem>

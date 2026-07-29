@@ -1,12 +1,15 @@
 // Configuración de la API
 // Backend real: Spring Boot, rutas bajo /api/v1.
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+export const BACKEND_URL = API_URL.replace(/\/api\/v1$/, '');
 
 // Endpoints
 // NOTA: el backend Java ahora tiene AuthController implementado con login/JWT.
 export const ENDPOINTS = {
   auth: {
-    login: `${API_URL.replace('/api/v1', '/api')}/auth/login`,
+    login: `${BACKEND_URL}/api/auth/login`,
+    csrf: `${BACKEND_URL}/api/auth/csrf`,
+    google: `${BACKEND_URL}/oauth2/authorization/google`,
   },
   usuarios: {
     getAll: `${API_URL}/usuarios`,
@@ -54,14 +57,30 @@ export async function apiRequest<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
+  let csrfToken = document.cookie
+    .split('; ')
+    .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
+    ?.split('=')[1];
+
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !csrfToken) {
+    await fetch(ENDPOINTS.auth.csrf, { credentials: 'include' });
+    csrfToken = document.cookie
+      .split('; ')
+      .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1];
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...(csrfToken ? { 'X-XSRF-TOKEN': decodeURIComponent(csrfToken) } : {}),
     ...(options.headers as Record<string, string>),
   };
 
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (!response.ok) {

@@ -51,7 +51,7 @@ export default function ColaTickets() {
   const { tickets, actualizarTicketCompleto, users, user } = useApp();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTecnico = user?.rol === 'tecnico';
+  const isTecnico = user?.rol === 'Tecnico';
   const [filtroEstado, setFiltroEstado] = useState('activos');
   const [ticketSeleccionado, setTicketSeleccionado] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -68,7 +68,7 @@ export default function ColaTickets() {
 
   // Obtener lista de técnicos y administradores activos
   const tecnicosYAdmins = useMemo(() => {
-    return users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
+    return users.filter((u) => u.rol === 'Tecnico' || u.rol === 'Administrador');
   }, [users]);
 
   //Filtrar y ordenar tickets por prioridad (RF-09)
@@ -549,7 +549,7 @@ export default function ColaTickets() {
                           <MenuItem value="">Sin asignar</MenuItem>
                           {tecnicosYAdmins.map((u) => (
                             <MenuItem key={u.id} value={String(u.id)}>
-                              {u.nombre} ({u.rol === 'admin' ? 'Admin' : 'Técnico'})
+                              {u.nombre} ({u.rol === 'Administrador' ? 'Admin' : 'Técnico'})
                             </MenuItem>
                           ))}
                         </Select>

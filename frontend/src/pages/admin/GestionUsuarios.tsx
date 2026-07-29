@@ -51,12 +51,12 @@ export default function GestionUsuarios() {
   const [eliminarModalOpen, setEliminarModalOpen] = useState(false);
   const [usuarioAEliminar, setUsuarioAEliminar] = useState<User | null>(null);
 
-  const tecnicosYAdmins = users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
-  const admins = users.filter((u) => u.rol === 'admin');
+  const tecnicosYAdmins = users.filter((u) => u.rol === 'Tecnico' || u.rol === 'Administrador');
+  const admins = users.filter((u) => u.rol === 'Administrador');
 
   const handleCambiarRol = (usuario: User) => {
     setUsuarioSeleccionado(usuario);
-    setNuevoRol(usuario.rol === 'admin' || usuario.rol === 'tecnico' ? usuario.rol : 'tecnico');
+    setNuevoRol(usuario.rol === 'Administrador' ? 'admin' : 'tecnico');
     setIsCreating(false);
     setModalOpen(true);
   };
@@ -171,11 +171,11 @@ export default function GestionUsuarios() {
                         {usuario.nombre}
                       </Typography>
                       <Chip
-                        label={usuario.rol === 'admin' ? 'Administrador' : 'Técnico'}
+                        label={usuario.rol === 'Administrador' ? 'Administrador' : 'Técnico'}
                         size="small"
                         sx={{
-                          bgcolor: usuario.rol === 'admin' ? '#94b43c' : '#e0e0e0',
-                          color: usuario.rol === 'admin' ? '#002f6c' : '#666',
+                          bgcolor: usuario.rol === 'Administrador' ? '#94b43c' : '#e0e0e0',
+                          color: usuario.rol === 'Administrador' ? '#002f6c' : '#666',
                           fontWeight: 'bold',
                         }}
                       />
@@ -212,7 +212,7 @@ export default function GestionUsuarios() {
                         variant="outlined"
                         size="small"
                         onClick={() => handleEliminarClick(usuario)}
-                        disabled={esAdminProtegido(usuario.email) || usuario.rol === 'admin'}
+                        disabled={esAdminProtegido(usuario.email) || usuario.rol === 'Administrador'}
                         color="error"
                         fullWidth
                         sx={{
@@ -249,10 +249,10 @@ export default function GestionUsuarios() {
                       <TableCell>{usuario.email}</TableCell>
                       <TableCell>
                         <Chip
-                          label={usuario.rol === 'admin' ? 'Administrador' : 'Técnico'}
+                          label={usuario.rol === 'Administrador' ? 'Administrador' : 'Técnico'}
                           sx={{
-                            bgcolor: usuario.rol === 'admin' ? '#94b43c' : '#e0e0e0',
-                            color: usuario.rol === 'admin' ? '#002f6c' : '#666',
+                            bgcolor: usuario.rol === 'Administrador' ? '#94b43c' : '#e0e0e0',
+                            color: usuario.rol === 'Administrador' ? '#002f6c' : '#666',
                             fontWeight: 'bold',
                           }}
                         />
@@ -286,7 +286,7 @@ export default function GestionUsuarios() {
                             variant="outlined"
                             size="small"
                             onClick={() => handleEliminarClick(usuario)}
-                            disabled={esAdminProtegido(usuario.email) || usuario.rol === 'admin'}
+                            disabled={esAdminProtegido(usuario.email) || usuario.rol === 'Administrador'}
                             color="error"
                             sx={{
                               borderColor: '#f44336',

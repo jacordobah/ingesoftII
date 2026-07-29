@@ -59,7 +59,7 @@ export default function Header({ onMenuClick, showMenuButton = false }: HeaderPr
                 {user.nombre}
               </Typography>
               <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.75rem', color: '#ffffff' }}>
-                {user.rol === 'admin' ? 'Admin' : user.rol === 'tecnico' ? 'Técnico' : 'Usuario'}
+                {user.rol === 'Administrador' ? 'Admin' : user.rol === 'Tecnico' ? 'Técnico' : 'Usuario'}
               </Typography>
             </Box>
             <Button

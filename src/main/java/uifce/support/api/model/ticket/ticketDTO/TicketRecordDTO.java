@@ -6,10 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record TicketRecordDTO (
-        @JsonAlias("usuarioId")
-        @NotNull(message = "El ID del usuario es obligatorio")
-        Long userId,
-
         @JsonAlias("subcategoriaId")
         @NotNull(message = "La subcategoría es obligatoria")
         Long subcategoryId,

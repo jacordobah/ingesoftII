@@ -50,7 +50,7 @@ export default function MisAsignaciones() {
 
   // Obtener lista de técnicos y administradores activos
   const tecnicosYAdmins = useMemo(() => {
-    return users.filter((u) => u.rol === 'tecnico' || u.rol === 'admin');
+    return users.filter((u) => u.rol === 'Tecnico' || u.rol === 'Administrador');
   }, [users]);
 
   // Calcular estadísticas
@@ -540,7 +540,7 @@ export default function MisAsignaciones() {
                       <MenuItem value="">Sin asignar</MenuItem>
                       {tecnicosYAdmins.map((u) => (
                         <MenuItem key={u.id} value={u.id}>
-                          {u.nombre} ({u.rol === 'admin' ? 'Admin' : 'Técnico'})
+                          {u.nombre} ({u.rol === 'Administrador' ? 'Admin' : 'Técnico'})
                         </MenuItem>
                       ))}
                     </Select>

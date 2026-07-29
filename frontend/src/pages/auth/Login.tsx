@@ -13,6 +13,7 @@ import {
 import GoogleIcon from '@mui/icons-material/Google';
 import { useApp } from '../../contexts/AppContext';
 import { validateEmail, validateField } from '../../utils/validation';
+import { ENDPOINTS } from '../../config/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -32,7 +33,7 @@ export default function Login() {
 
   const handleGoogleLogin = () => {
     // Redirigir al endpoint de OAuth2 de Google
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = ENDPOINTS.auth.google;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

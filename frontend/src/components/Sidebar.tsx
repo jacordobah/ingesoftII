@@ -26,12 +26,12 @@ export default function Sidebar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const menuItems = user?.rol === 'usuario'
+  const menuItems = user?.rol === 'Usuario'
     ? [
         { text: 'Nueva Solicitud', path: '/usuario/nuevo', icon: <AddIcon /> },
         { text: 'Ver Anteriores', path: '/usuario/historial', icon: <HistoryIcon /> },
       ]
-    : user?.rol === 'tecnico'
+    : user?.rol === 'Tecnico'
     ? [
         { text: 'Tickets', path: '/tecnico/cola', icon: <ListAltIcon /> },
         { text: 'Mis Asignaciones', path: '/tecnico/asignaciones', icon: <AssignmentIcon /> },
@@ -39,7 +39,7 @@ export default function Sidebar() {
         { text: 'Nueva Solicitud', path: '/usuario/nuevo', icon: <AddIcon /> },
         { text: 'Ver Anteriores', path: '/usuario/historial', icon: <HistoryIcon /> },
       ]
-    : user?.rol === 'admin'
+    : user?.rol === 'Administrador'
     ? [
         { text: 'Dashboard', path: '/admin/dashboard', icon: <DashboardIcon /> },
         { text: 'Tickets', path: '/admin/cola', icon: <ListAltIcon /> },

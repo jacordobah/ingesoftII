@@ -4,6 +4,7 @@ package uifce.support.api.controller;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import uifce.support.api.model.location.buildingDTO.BuildingRecordDTO;
@@ -30,6 +31,7 @@ public class LocationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<BuildingResponseDetailDTO> recordBuilding(@RequestBody @Valid BuildingRecordDTO buildingRecord,
                                                                     UriComponentsBuilder uriBuilder) {
         BuildingResponseDetailDTO buildingResponseDetailDTO = locationService.recordBuilding(buildingRecord);
@@ -43,6 +45,7 @@ public class LocationController {
     }
 
     @PostMapping("/{id}/oficinas")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<OfficeResponseDetailDTO> recordOffice(@PathVariable Long id,
                                                                 @RequestBody @Valid OfficeRecordDTO officeRecord,
                                                                 UriComponentsBuilder uriBuilder){
@@ -57,11 +60,13 @@ public class LocationController {
     }
 
     @PutMapping
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<BuildingResponseDetailDTO> updateBuilding(@RequestBody @Valid BuildingUpdateDTO officeUpdate){
         return ResponseEntity.ok(locationService.updateBuilding(officeUpdate));
     }
 
     @PutMapping("/oficinas")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<OfficeResponseDetailDTO> updateOffice(@RequestBody @Valid OfficeUpdateDTO officeUpdate){
         return ResponseEntity.ok(locationService.updateOffice(officeUpdate));
     }
@@ -77,18 +82,21 @@ public class LocationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity deleteBuilding(@PathVariable Long id){
         locationService.deleteBuilding(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/oficinas/{id}")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity deleteOffice(@PathVariable Long id){
         locationService.deleteOffice(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/oficinas/{id}")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<OfficeResponseDetailDTO> enableOffice(@PathVariable Long id){
         return ResponseEntity.ok(locationService.enableOffice(id));
     }

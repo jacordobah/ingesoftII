@@ -157,18 +157,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshData = useCallback(async () => {
     try {
-      const [apiTickets, apiUsers] = await Promise.all([
-        apiRequest<PageResponse<TicketBackendDTO>>(ENDPOINTS.tickets.getAll),
-        apiRequest<PageResponse<User>>(ENDPOINTS.usuarios.getAll),
-      ]);
+      const apiTickets = await apiRequest<PageResponse<TicketBackendDTO>>(ENDPOINTS.tickets.getAll);
       setTickets(apiTickets.content.map(normalizeTicket));
-      setUsers(apiUsers.content);
+      if (user?.rol === 'Administrador' || user?.rol === 'Tecnico') {
+        const apiUsers = await apiRequest<PageResponse<User>>(ENDPOINTS.usuarios.getAll);
+        setUsers(apiUsers.content);
+      }
     } catch (error) {
       console.error('No se pudo sincronizar con el backend:', error);
     }
     // auditoria.* no tiene implementacion en el backend (AuditController esta
     // vacio), asi que no se intenta la llamada: se deja en [] hasta que exista.
-  }, []);
+  }, [user]);
 
   // Carga la matriz de puntajes real: categorias -> subcategorias,
   // edificios -> oficinas. No hay endpoints "planos" para subcategorias u
@@ -216,7 +216,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!email.endsWith('@unal.edu.co')) return false;
 
     try {
-      const response = await apiRequest<{ user: User; token: string }>(ENDPOINTS.auth.login, {
+      const response = await apiRequest<{ user: User }>(ENDPOINTS.auth.login, {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
@@ -248,7 +248,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const ticket = await apiRequest<TicketBackendDTO>(ENDPOINTS.tickets.create, {
       method: 'POST',
       body: JSON.stringify({
-        usuarioId: user.id,
         subcategoriaId: data.subcategoriaId,
         oficinaId: data.oficinaId,
         cantidadEquipos: data.cantidadEquipos,

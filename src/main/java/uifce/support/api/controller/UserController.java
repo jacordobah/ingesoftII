@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -28,6 +29,7 @@ public class UserController {
 
 
     @PostMapping
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<UserResponseDTO> recordUser(@RequestBody @Valid UserRecordDTO userRecordDTO,
                                                             UriComponentsBuilder uriBuilder) {
         UserResponseDTO userResponseDTO= userService.createUser(userRecordDTO);
@@ -36,11 +38,13 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('Administrador', 'Tecnico')")
     public ResponseEntity<Page<UserResponseDTO>> ListUserByAdminOrTechnical(Pageable pag) {
         return ResponseEntity.ok(userService.findAllUserByAdminOrTechnical(pag));
     }
 
     @GetMapping("/usuarios_registrados")
+    @PreAuthorize("hasAnyRole('Administrador', 'Tecnico')")
     public ResponseEntity<Page<UserResponseDTO>> findAllUserByUser(Pageable pag) {
         return ResponseEntity.ok(userService.findAllUserByUser(pag));
     }
@@ -50,16 +54,20 @@ public class UserController {
     // de sesion de Spring Security (no hay JSON de login que leer).
     @GetMapping("/me")
     public ResponseEntity<UserResponseDTO> me(Authentication authentication) {
-        String email = ((OAuth2User) authentication.getPrincipal()).getAttribute("email");
+        String email = authentication.getPrincipal() instanceof OAuth2User oauthUser
+                ? oauthUser.getAttribute("email")
+                : authentication.getName();
         return ResponseEntity.ok(userService.findByEmail(email));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<UserResponseDTO> findUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.findById(id));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<UserResponseDTO> deleteUserById(@PathVariable Long id) {
         userService.disableUser(id);
         return ResponseEntity.noContent().build();
