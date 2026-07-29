@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import type { User } from '../../types';
 import {
@@ -51,9 +51,12 @@ export default function GestionUsuarios() {
   const [eliminarModalOpen, setEliminarModalOpen] = useState(false);
   const [usuarioAEliminar, setUsuarioAEliminar] = useState<User | null>(null);
 
-  const tecnicosYAdmins = users.filter((u) => u.rol === 'Tecnico' || u.rol === 'Administrador');
   const admins = users.filter((u) => u.rol === 'Administrador');
   const emailValido = /^[^\s@]+@unal\.edu\.co$/i.test(nuevoEmail.trim());
+
+  useEffect(() => {
+    void recargarDatos();
+  }, [recargarDatos]);
 
   const handleCambiarRol = (usuario: User) => {
     setUsuarioSeleccionado(usuario);
@@ -146,7 +149,7 @@ export default function GestionUsuarios() {
             Gestión de Usuarios
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            Lista de técnicos y administradores
+            Lista de usuarios, técnicos y administradores
           </Typography>
         </Box>
 
@@ -172,7 +175,7 @@ export default function GestionUsuarios() {
           </Box>
           {isMobile ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {tecnicosYAdmins.map((usuario) => (
+              {users.map((usuario) => (
                 <Card key={usuario.id} variant="outlined">
                   <CardContent sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -180,7 +183,7 @@ export default function GestionUsuarios() {
                         {usuario.nombre}
                       </Typography>
                       <Chip
-                        label={usuario.rol === 'Administrador' ? 'Administrador' : 'Técnico'}
+                        label={usuario.rol === 'Tecnico' ? 'Técnico' : usuario.rol}
                         size="small"
                         sx={{
                           bgcolor: usuario.rol === 'Administrador' ? '#94b43c' : '#e0e0e0',
@@ -252,13 +255,13 @@ export default function GestionUsuarios() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {tecnicosYAdmins.map((usuario) => (
+                  {users.map((usuario) => (
                     <TableRow key={usuario.id}>
                       <TableCell>{usuario.nombre}</TableCell>
                       <TableCell>{usuario.email}</TableCell>
                       <TableCell>
                         <Chip
-                          label={usuario.rol === 'Administrador' ? 'Administrador' : 'Técnico'}
+                          label={usuario.rol === 'Tecnico' ? 'Técnico' : usuario.rol}
                           sx={{
                             bgcolor: usuario.rol === 'Administrador' ? '#94b43c' : '#e0e0e0',
                             color: usuario.rol === 'Administrador' ? '#002f6c' : '#666',

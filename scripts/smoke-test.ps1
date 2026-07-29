@@ -161,6 +161,11 @@ try {
         email = $script:UserEmail
         rol = "Usuario"
     } -Expected @(201)
+    $registeredUsers = Invoke-Api -Session $admin -Method GET -Path "/api/v1/usuarios/usuarios_registrados?size=100" -Body $null
+    $registeredUser = @($registeredUsers.Json.content) | Where-Object { $_.id -eq $user.Json.id }
+    if (!$registeredUser -or $registeredUser.rol -ne "Usuario") {
+        throw "El usuario registrado no aparece en la vista administrativa"
+    }
 
     $hash = '$2a$10$yzAJ0Z1U.lIcTJmzIm4PAOsbnTRLqPLw2iI7B8nn/4C3Q8LiqEpK2'
     Invoke-Mysql "UPDATE usuarios SET password='$hash' WHERE email IN ('$($script:TechnicianEmail)','$($script:UserEmail)');"

@@ -209,8 +209,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const apiTickets = await apiRequest<PageResponse<TicketBackendDTO>>(ENDPOINTS.tickets.getAll);
       setTickets(apiTickets.content.map(normalizeTicket));
       if (user?.rol === 'Administrador' || user?.rol === 'Tecnico') {
-        const apiUsers = await apiRequest<PageResponse<User>>(ENDPOINTS.usuarios.getAll);
-        setUsers(apiUsers.content);
+        const userRequests = [apiRequest<PageResponse<User>>(ENDPOINTS.usuarios.getAll)];
+        if (user.rol === 'Administrador') {
+          userRequests.push(apiRequest<PageResponse<User>>(ENDPOINTS.usuarios.getRegistered));
+        }
+        const apiUsers = await Promise.all(userRequests);
+        setUsers(apiUsers.flatMap(({ content }) => content));
       }
     } catch (error) {
       console.error('No se pudo sincronizar con el backend:', error);

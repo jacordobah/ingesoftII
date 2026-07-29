@@ -13,6 +13,7 @@ export const ENDPOINTS = {
   },
   usuarios: {
     getAll: `${API_URL}/usuarios`,
+    getRegistered: `${API_URL}/usuarios/usuarios_registrados`,
     me: `${API_URL}/usuarios/me`,
     getById: (id: number) => `${API_URL}/usuarios/${id}`,
     create: `${API_URL}/usuarios`,
