@@ -96,14 +96,7 @@ export interface Comentario {
 }
 
 // Auditoría (RF-25 a RF-31)
-export type AuditoriaAccion = 
-  | 'creacion_ticket'
-  | 'asignacion_ticket'
-  | 'reasignacion_ticket'
-  | 'cambio_estado'
-  | 'modificacion_categoria'
-  | 'inclusion_comentario'
-  | 'cierre_ticket';
+export type AuditoriaAccion = string;
 
 export interface Auditoria {
   id: string;
@@ -121,6 +114,7 @@ export interface Auditoria {
     categoriaNueva?: string;
     comentario?: string;
     motivo?: string;
+    [key: string]: unknown;
   };
 }
 

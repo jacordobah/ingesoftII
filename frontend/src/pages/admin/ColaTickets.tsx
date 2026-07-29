@@ -31,7 +31,7 @@ import {
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
 import { calcularTiempoRestante, formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
-import type { Ticket } from '../../types';
+import type { Ticket, TicketStatus } from '../../types';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { LoadingSpinner } from '../../components/atoms';
 
@@ -55,12 +55,12 @@ export default function ColaTickets() {
   const [filtroEstado, setFiltroEstado] = useState('activos');
   const [ticketSeleccionado, setTicketSeleccionado] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [nuevoEstado, setNuevoEstado] = useState('');
+  const [nuevoEstado, setNuevoEstado] = useState<TicketStatus>('abierto');
   const [nuevoTecnico, setNuevoTecnico] = useState('');
   const [comentario, setComentario] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Estados para paginación
   const [page, setPage] = useState(0);
@@ -111,7 +111,6 @@ export default function ColaTickets() {
 
   // Simular carga inicial
   useEffect(() => {
-    setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 500);
@@ -192,7 +191,7 @@ export default function ColaTickets() {
     }
 
     // Guardar cambios usando actualizarTicketCompleto
-    actualizarTicketCompleto(ticketSeleccionado.id, nuevoEstado as any, nuevoTecnico, comentario);
+    actualizarTicketCompleto(ticketSeleccionado.id, nuevoEstado, nuevoTecnico, comentario);
     
     setModalOpen(false);
     
@@ -529,7 +528,7 @@ export default function ColaTickets() {
                         <Select
                           value={nuevoEstado}
                           label="Estado"
-                          onChange={(e) => setNuevoEstado(e.target.value)}
+                          onChange={(e) => setNuevoEstado(e.target.value as TicketStatus)}
                         >
                           <MenuItem value="abierto">Abierto</MenuItem>
                           <MenuItem value="en_proceso">En Proceso</MenuItem>

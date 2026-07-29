@@ -14,7 +14,7 @@ import {
 import type { TableProps } from '@mui/material';
 
 export interface Column<T> {
-  id: string;
+  id: keyof T & string;
   label: string;
   render?: (row: T) => React.ReactNode;
   sortable?: boolean;
@@ -169,7 +169,7 @@ export function DataTable<T>({
                     )}
                     {columns.map((column) => (
                       <TableCell key={column.id}>
-                        {column.render ? column.render(row) : (row as any)[column.id]}
+                        {column.render ? column.render(row) : row[column.id] as React.ReactNode}
                       </TableCell>
                     ))}
                   </TableRow>

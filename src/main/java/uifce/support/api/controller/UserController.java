@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import uifce.support.api.model.user.UserRecordDTO;
 import uifce.support.api.model.user.UserResponseDTO;
+import uifce.support.api.model.user.Role;
 import uifce.support.api.service.UserService;
 
 import java.net.URI;
@@ -64,6 +65,14 @@ public class UserController {
     @PreAuthorize("hasRole('Administrador')")
     public ResponseEntity<UserResponseDTO> findUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.findById(id));
+    }
+
+    @PatchMapping("/{id}/rol")
+    @PreAuthorize("hasRole('Administrador')")
+    public ResponseEntity<UserResponseDTO> updateRole(
+            @PathVariable Long id,
+            @RequestParam Role rol) {
+        return ResponseEntity.ok(userService.updateRole(id, rol));
     }
 
     @DeleteMapping("/{id}")

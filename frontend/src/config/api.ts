@@ -16,6 +16,7 @@ export const ENDPOINTS = {
     me: `${API_URL}/usuarios/me`,
     getById: (id: number) => `${API_URL}/usuarios/${id}`,
     create: `${API_URL}/usuarios`,
+    updateRole: (id: number, rol: string) => `${API_URL}/usuarios/${id}/rol?rol=${encodeURIComponent(rol)}`,
     delete: (id: number) => `${API_URL}/usuarios/${id}`,
   },
   tickets: {

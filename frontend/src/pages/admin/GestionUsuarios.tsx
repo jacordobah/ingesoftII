@@ -53,6 +53,7 @@ export default function GestionUsuarios() {
 
   const tecnicosYAdmins = users.filter((u) => u.rol === 'Tecnico' || u.rol === 'Administrador');
   const admins = users.filter((u) => u.rol === 'Administrador');
+  const emailValido = /^[^\s@]+@unal\.edu\.co$/i.test(nuevoEmail.trim());
 
   const handleCambiarRol = (usuario: User) => {
     setUsuarioSeleccionado(usuario);
@@ -98,9 +99,10 @@ export default function GestionUsuarios() {
   const handleGuardar = async () => {
     if (isCreating) {
       try {
+        const email = nuevoEmail.trim().toLowerCase();
         await apiRequest(ENDPOINTS.usuarios.create, {
           method: 'POST',
-          body: JSON.stringify({ nombre: nuevoEmail.split('@')[0], email: nuevoEmail, rol: ROL_HACIA_BACKEND[nuevoRol] }),
+          body: JSON.stringify({ nombre: email.split('@')[0], email, rol: ROL_HACIA_BACKEND[nuevoRol] }),
         });
         await recargarDatos();
       } catch (error) {
@@ -114,11 +116,18 @@ export default function GestionUsuarios() {
         alert('El sistema debe tener al menos un usuario administrador.');
         return;
       }
-      // El backend no expone un endpoint para cambiar el rol de un usuario
-      // existente (UserController solo tiene crear/listar/eliminar).
-      console.warn('Cambiar rol no esta soportado por el backend todavia.');
-      alert('Cambiar el rol de un usuario existente no esta soportado por el backend todavia.');
-      return;
+      if (!usuarioSeleccionado) return;
+      try {
+        await apiRequest(
+          ENDPOINTS.usuarios.updateRole(usuarioSeleccionado.id, ROL_HACIA_BACKEND[nuevoRol]),
+          { method: 'PATCH' }
+        );
+        await recargarDatos();
+      } catch (error) {
+        console.error('No se pudo cambiar el rol:', error);
+        alert('No se pudo cambiar el rol del usuario.');
+        return;
+      }
     }
     setModalOpen(false);
   };
@@ -321,9 +330,13 @@ export default function GestionUsuarios() {
               <>
                 <TextField
                   fullWidth
+                  required
+                  type="email"
                   label="Email"
                   value={nuevoEmail}
                   onChange={(e) => setNuevoEmail(e.target.value)}
+                  error={nuevoEmail.length > 0 && !emailValido}
+                  helperText={nuevoEmail.length > 0 && !emailValido ? 'Use un correo @unal.edu.co válido' : ' '}
                   sx={{ mb: 2 }}
                 />
                 <FormControl fullWidth sx={{ mt: 2 }}>
@@ -376,7 +389,10 @@ export default function GestionUsuarios() {
             onClick={handleGuardar} 
             variant="contained" 
             sx={{ bgcolor: '#94b43c', color: '#002f6c', '&:hover': { bgcolor: '#7a9a30' } }}
-            disabled={!isCreating && nuevoRol !== 'admin' && admins.length === 1 && admins[0].id === usuarioSeleccionado?.id}
+            disabled={
+              (isCreating && !emailValido)
+              || (!isCreating && nuevoRol !== 'admin' && admins.length === 1 && admins[0].id === usuarioSeleccionado?.id)
+            }
           >
             Guardar
           </Button>

@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   Paper,
   Box,
@@ -13,18 +12,10 @@ import type { Ticket } from '../../types';
 export default function ConfirmacionTicket() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [ticket, setTicket] = useState<Ticket | null>(null);
-
-  useEffect(() => {
-    if (location.state?.ticket) {
-      setTicket(location.state.ticket);
-    } else {
-      navigate('/usuario/nuevo');
-    }
-  }, [location, navigate]);
+  const ticket = location.state?.ticket as Ticket | undefined;
 
   if (!ticket) {
-    return null;
+    return <Navigate to="/usuario/nuevo" replace />;
   }
 
   return (

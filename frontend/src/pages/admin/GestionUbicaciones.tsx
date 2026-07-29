@@ -24,9 +24,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useApp } from '../../contexts/AppContext';
+import { ENDPOINTS, apiRequest } from '../../config/api';
 
 export default function GestionUbicaciones() {
-  const { edificios, oficinas, tickets } = useApp();
+  const { edificios, oficinas, tickets, recargarMatrizPuntajes } = useApp();
   const [edificioSeleccionado, setEdificioSeleccionado] = useState<number | null>(null);
   const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState<Ubicacion | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -44,6 +45,7 @@ export default function GestionUbicaciones() {
   const handleEditarEdificio = (e: React.MouseEvent, edificioId: number) => {
     e.stopPropagation();
     const edificio = edificios.find((ed) => ed.id === edificioId);
+    setEdificioSeleccionado(edificioId);
     setEditNombre(edificio?.nombre || '');
     setEditPuntaje('');
     setEditOculto(false);
@@ -87,15 +89,65 @@ export default function GestionUbicaciones() {
     setModalOpen(true);
   };
 
-  const handleGuardar = () => {
-    console.log('Guardar:', { 
-      type: modalType, 
-      edificio: modalType === 'edificio' ? edificioSeleccionado : ubicacionSeleccionada?.edificio,
-      id: modalType === 'ubicacion' ? ubicacionSeleccionada?.id : null,
-      nombre: editNombre, 
-      puntaje: editPuntaje
-    });
-    setModalOpen(false);
+  const handleGuardar = async () => {
+    const nombre = editNombre.trim();
+    if (!nombre) return;
+
+    try {
+      if (modalType === 'edificio') {
+        if (isCreating) {
+          const numero = Math.max(0, ...edificios.map((edificio) => edificio.numero)) + 1;
+          await apiRequest(ENDPOINTS.ubicaciones.createEdificio, {
+            method: 'POST',
+            body: JSON.stringify({ numero, nombre }),
+          });
+        } else if (edificioSeleccionado) {
+          const edificio = edificios.find((item) => item.id === edificioSeleccionado);
+          await apiRequest(ENDPOINTS.ubicaciones.updateEdificio, {
+            method: 'PUT',
+            body: JSON.stringify({ id: edificioSeleccionado, numero: edificio?.numero ?? 0, nombre }),
+          });
+        }
+      } else {
+        const puntaje = Number(editPuntaje);
+        if (!editPuntaje.trim() || !Number.isFinite(puntaje)) return;
+        if (isCreating && edificioSeleccionado) {
+          await apiRequest(ENDPOINTS.ubicaciones.createOficina(edificioSeleccionado), {
+            method: 'POST',
+            body: JSON.stringify({ nombre, puntaje }),
+          });
+        } else if (ubicacionSeleccionada) {
+          await apiRequest(
+            editOculto
+              ? ENDPOINTS.ubicaciones.deleteOficina(ubicacionSeleccionada.id)
+              : ENDPOINTS.ubicaciones.updateOficina,
+            {
+              method: editOculto ? 'DELETE' : 'PUT',
+              body: editOculto
+                ? undefined
+                : JSON.stringify({ id: ubicacionSeleccionada.id, nombre, puntaje }),
+            }
+          );
+        }
+      }
+      await recargarMatrizPuntajes();
+      setModalOpen(false);
+    } catch (error) {
+      console.error('No se pudo guardar la ubicación:', error);
+      alert('No se pudo guardar la ubicación.');
+    }
+  };
+
+  const handleEliminar = async () => {
+    if (!ubicacionSeleccionada) return;
+    try {
+      await apiRequest(ENDPOINTS.ubicaciones.deleteOficina(ubicacionSeleccionada.id), { method: 'DELETE' });
+      await recargarMatrizPuntajes();
+      setModalOpen(false);
+    } catch (error) {
+      console.error('No se pudo eliminar la ubicación:', error);
+      alert('No se pudo eliminar la ubicación.');
+    }
   };
 
   const handleCloseModal = () => {
@@ -304,7 +356,7 @@ export default function GestionUbicaciones() {
                   </Alert>
                 ) : (
                   <Button
-                    onClick={() => console.log('Eliminar')}
+                    onClick={() => void handleEliminar()}
                     variant="outlined"
                     color="error"
                     startIcon={<DeleteIcon />}
@@ -321,7 +373,13 @@ export default function GestionUbicaciones() {
           <Button onClick={handleCloseModal} variant="outlined">
             Cancelar
           </Button>
-          <Button onClick={handleGuardar} variant="contained" sx={{ bgcolor: '#94b43c', color: '#002f6c', '&:hover': { bgcolor: '#7a9a30' } }}>
+          <Button
+            onClick={() => void handleGuardar()}
+            disabled={!editNombre.trim() || (modalType === 'ubicacion'
+              && (!editPuntaje.trim() || !Number.isFinite(Number(editPuntaje))))}
+            variant="contained"
+            sx={{ bgcolor: '#94b43c', color: '#002f6c', '&:hover': { bgcolor: '#7a9a30' } }}
+          >
             Guardar
           </Button>
         </DialogActions>

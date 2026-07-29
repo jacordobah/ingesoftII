@@ -136,7 +136,7 @@ export function validateEquipmentCount(value: string): ValidationResult {
  */
 export function validateText(value: string, options?: { allowSpecialChars?: boolean }): ValidationResult {
   const pattern = options?.allowSpecialChars 
-    ? /^[a-zA-Z0-9\s.,;:!?¡¿'"@#$%&*()_+\-=\[\]{}|\\\/<>]*$/
+    ? /^[\s\S]*$/
     : /^[a-zA-Z0-9\s]*$/;
   
   const textRules: ValidationRule = {

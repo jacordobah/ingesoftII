@@ -2,6 +2,7 @@ package uifce.support.api.auth.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -15,6 +16,7 @@ import uifce.support.api.model.user.UserRepository;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
@@ -23,6 +25,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -70,7 +75,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         user.setGoogleId(googleId);
         user.setRole(Role.Usuario); // Por defecto rol de usuario
         user.setActive(true);
-        user.setPassword("OAUTH_USER"); // Placeholder para usuarios OAuth
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         return userRepository.save(user);
     }
 }

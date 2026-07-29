@@ -29,15 +29,16 @@ import {
 } from '@mui/material';
 import { useApp } from '../../contexts/AppContext';
 import { calcularTiempoRestante, formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
+import type { Ticket, TicketStatus } from '../../types';
 
 export default function MisAsignaciones() {
   const { tickets, user, actualizarTicketCompleto, users } = useApp();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [ticketSeleccionado, setTicketSeleccionado] = useState<any>(null);
+  const [ticketSeleccionado, setTicketSeleccionado] = useState<Ticket | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [nuevoEstado, setNuevoEstado] = useState('');
+  const [nuevoEstado, setNuevoEstado] = useState<TicketStatus>('abierto');
   const [nuevoTecnico, setNuevoTecnico] = useState('');
   const [comentario, setComentario] = useState('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function MisAsignaciones() {
 
   // Filtrar tickets asignados al técnico actual
   const ticketsAsignados = useMemo(() => {
-    return tickets.filter((t) => t.tecnicoAsignado === user?.id);
+    return tickets.filter((t) => t.tecnicoAsignado === user?.nombre);
   }, [tickets, user]);
 
   // Obtener lista de técnicos y administradores activos
@@ -146,10 +147,11 @@ export default function MisAsignaciones() {
     }
   };
 
-  const handleRowClick = (ticket: any) => {
+  const handleRowClick = (ticket: Ticket) => {
     setTicketSeleccionado(ticket);
     setNuevoEstado(ticket.estado);
-    setNuevoTecnico(ticket.tecnicoAsignado || '');
+    const tecnicoActual = users.find((candidate) => candidate.nombre === ticket.tecnicoAsignado);
+    setNuevoTecnico(tecnicoActual ? String(tecnicoActual.id) : '');
     setComentario('');
     setModalOpen(true);
   };
@@ -178,7 +180,7 @@ export default function MisAsignaciones() {
     }
 
     // Guardar cambios usando actualizarTicketCompleto
-    actualizarTicketCompleto(ticketSeleccionado.id, nuevoEstado as any, nuevoTecnico, comentario);
+    actualizarTicketCompleto(ticketSeleccionado.id, nuevoEstado, nuevoTecnico, comentario);
     
     setModalOpen(false);
     
@@ -518,7 +520,7 @@ export default function MisAsignaciones() {
                     <Select
                       value={nuevoEstado}
                       label="Estado"
-                      onChange={(e) => setNuevoEstado(e.target.value)}
+                      onChange={(e) => setNuevoEstado(e.target.value as TicketStatus)}
                       disabled={ticketSeleccionado.estado === 'cerrado'}
                     >
                       <MenuItem value="abierto">Abierto</MenuItem>

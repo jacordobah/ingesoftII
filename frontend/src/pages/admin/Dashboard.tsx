@@ -127,7 +127,7 @@ export default function Dashboard() {
     }, {} as Record<string, number>);
 
     // Tickets resueltos por semana (últimas 8 semanas)
-    const ticketsResueltosPorSemana = useMemo(() => {
+    const ticketsResueltosPorSemana = (() => {
       const semanas: Record<string, number> = {};
       const hoy = new Date();
       
@@ -148,7 +148,7 @@ export default function Dashboard() {
           const inicioSemana = new Date(fechaResolucion);
           inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
           const key = inicioSemana.toISOString().split('T')[0];
-          if (semanas.hasOwnProperty(key)) {
+          if (Object.hasOwn(semanas, key)) {
             semanas[key]++;
           }
         }
@@ -158,7 +158,7 @@ export default function Dashboard() {
         fecha: new Date(fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
         count,
       }));
-    }, [ticketsFiltrados]);
+    })();
 
     return {
       totalTickets,

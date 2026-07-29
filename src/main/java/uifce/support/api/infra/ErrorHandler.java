@@ -19,8 +19,8 @@ public class ErrorHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity handleException409(DataIntegrityViolationException exception) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage().subSequence(29,70));
-        //return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "El registro ya existe o contiene datos inválidos"));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)

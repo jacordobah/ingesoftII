@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Container,
@@ -20,16 +20,13 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
-  const [oauthError, setOauthError] = useState('');
   const { login } = useApp();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    if (searchParams.get('error')) {
-      setOauthError('No se pudo iniciar sesión con Google. Use su correo institucional @unal.edu.co.');
-    }
-  }, [searchParams]);
+  const oauthError = searchParams.get('error')
+    ? 'No se pudo iniciar sesión con Google. Use su correo institucional @unal.edu.co.'
+    : '';
 
   const handleGoogleLogin = () => {
     // Redirigir al endpoint de OAuth2 de Google
@@ -40,7 +37,6 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setEmailError('');
-    setOauthError('');
 
     // Validar email con formato institucional
     const emailValidation = validateEmail(email);

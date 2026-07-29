@@ -10,6 +10,7 @@ import type {
   TicketStatus,
   Ubicacion,
   User,
+  UserRole,
 } from '../types';
 import { ENDPOINTS, apiRequest } from '../config/api';
 
@@ -119,6 +120,54 @@ interface TicketBackendDTO {
   comentario: string | null;
 }
 
+interface AuditBackendDTO {
+  id: number;
+  ticketId: string | null;
+  accion: string;
+  usuario: string;
+  usuarioRol: string;
+  fecha: string;
+  detalles: string | null;
+}
+
+const ACCION_AUDITORIA: Record<string, string> = {
+  CREACION_TICKET: 'creacion_ticket',
+  ASIGNACION_TICKET: 'asignacion_ticket',
+  REASIGNACION_TICKET: 'reasignacion_ticket',
+  CAMBIO_ESTADO_TICKET: 'cambio_estado',
+  MODIFICACION_CATEGORIA: 'modificacion_categoria',
+};
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function normalizeAudit(dto: AuditBackendDTO): Auditoria {
+  let detalles: Record<string, unknown>;
+  try {
+    detalles = dto.detalles ? JSON.parse(dto.detalles) as Record<string, unknown> : {};
+  } catch {
+    detalles = dto.detalles ? { texto: dto.detalles } : {};
+  }
+  return {
+    id: String(dto.id),
+    ticketId: dto.ticketId ?? '-',
+    accion: ACCION_AUDITORIA[dto.accion] ?? dto.accion.toLowerCase(),
+    usuario: dto.usuario,
+    usuarioRol: dto.usuarioRol as UserRole,
+    fecha: new Date(dto.fecha),
+    detalles: {
+      ...detalles,
+      estadoAnterior: optionalString(detalles.estado_anterior),
+      estadoNuevo: optionalString(detalles.estado_posterior),
+      categoriaAnterior: optionalString(detalles.nombre_anterior),
+      categoriaNueva: optionalString(detalles.nombre_nuevo),
+      comentario: optionalString(detalles.comentario_cierre),
+      motivo: optionalString(detalles.motivo),
+    },
+  };
+}
+
 function normalizeTicket(dto: TicketBackendDTO): Ticket {
   return {
     id: dto.id,
@@ -146,7 +195,7 @@ function normalizeTicket(dto: TicketBackendDTO): Ticket {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(getStoredUser);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [auditoria] = useState<Auditoria[]>([]);
+  const [auditoria, setAuditoria] = useState<Auditoria[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [subcategorias, setSubcategorias] = useState<Subcategoria[]>([]);
@@ -166,8 +215,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('No se pudo sincronizar con el backend:', error);
     }
-    // auditoria.* no tiene implementacion en el backend (AuditController esta
-    // vacio), asi que no se intenta la llamada: se deja en [] hasta que exista.
+    if (user?.rol === 'Administrador') {
+      try {
+        const apiAudit = await apiRequest<PageResponse<AuditBackendDTO>>(
+          `${ENDPOINTS.auditoria.getAll}?size=100`
+        );
+        setAuditoria(apiAudit.content.map(normalizeAudit));
+      } catch (error) {
+        console.error('No se pudo cargar la auditoria:', error);
+      }
+    } else {
+      setAuditoria([]);
+    }
   }, [user]);
 
   // Carga la matriz de puntajes real: categorias -> subcategorias,
@@ -207,6 +266,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshData();
     void recargarMatrizPuntajes();
   }, [isAuthenticated, refreshData, recargarMatrizPuntajes]);
@@ -353,6 +413,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useApp() {
   const context = useContext(AppContext);
   if (context === undefined) {

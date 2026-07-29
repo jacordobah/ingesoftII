@@ -113,7 +113,7 @@ export default function Auditoria() {
                 </Typography>
               </Box>
             ) : (
-              auditoria.slice().reverse().slice(0, 20).map((registro) => (
+              auditoria.slice(0, 20).map((registro) => (
                 <Card key={registro.id} variant="outlined">
                   <CardContent sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -182,7 +182,7 @@ export default function Auditoria() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  auditoria.slice().reverse().slice(0, 20).map((registro) => (
+                  auditoria.slice(0, 20).map((registro) => (
                     <TableRow key={registro.id}>
                       <TableCell>{formatearFechaHora(registro.fecha)}</TableCell>
                       <TableCell>

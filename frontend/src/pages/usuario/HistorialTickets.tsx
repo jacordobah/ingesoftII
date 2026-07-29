@@ -26,7 +26,7 @@ import { useApp } from '../../contexts/AppContext';
 import { formatearFecha, formatearFechaHora } from '../../utils/ticketUtils';
 
 export default function HistorialTickets() {
-  const { user, tickets, getTicketsByUsuario } = useApp();
+  const { user, getTicketsByUsuario } = useApp();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -36,7 +36,7 @@ export default function HistorialTickets() {
   const misTickets = useMemo(() => {
     if (!user) return [];
     return getTicketsByUsuario(user.email);
-  }, [user, tickets, getTicketsByUsuario]);
+  }, [user, getTicketsByUsuario]);
 
   const getStatusColor = useCallback((estado: string) => {
     switch (estado) {

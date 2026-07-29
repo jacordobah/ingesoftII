@@ -24,9 +24,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useApp } from '../../contexts/AppContext';
+import { ENDPOINTS, apiRequest } from '../../config/api';
 
 export default function GestionCategorias() {
-  const { categorias, subcategorias, tickets } = useApp();
+  const { categorias, subcategorias, tickets, recargarMatrizPuntajes } = useApp();
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<Subcategoria | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,6 +46,7 @@ export default function GestionCategorias() {
     e.stopPropagation();
     const categoria = categorias.find((c) => c.id === categoriaId);
     if (categoria) {
+      setCategoriaSeleccionada(categoriaId);
       setEditNombre(categoria.nombre);
       setEditOculto(categoria.oculto || false);
       setModalType('categoria');
@@ -71,7 +73,7 @@ export default function GestionCategorias() {
     return tickets.some((t) => t.subcategoria === nombre);
   };
 
-  const handleSubcategoriaClick = (subcategoria: any) => {
+  const handleSubcategoriaClick = (subcategoria: Subcategoria) => {
     setSubcategoriaSeleccionada(subcategoria);
     setEditNombre(subcategoria.nombre);
     setEditPuntaje(subcategoria.puntaje.toString());
@@ -90,15 +92,69 @@ export default function GestionCategorias() {
     setModalOpen(true);
   };
 
-  const handleGuardar = () => {
-    // Aquí se implementaría la lógica para guardar los cambios
-    console.log('Guardar:', { 
-      type: modalType, 
-      id: modalType === 'categoria' ? categoriaSeleccionada : subcategoriaSeleccionada?.id, 
-      nombre: editNombre, 
-      puntaje: editPuntaje
-    });
-    setModalOpen(false);
+  const handleGuardar = async () => {
+    const nombre = editNombre.trim();
+    if (!nombre) return;
+
+    try {
+      if (modalType === 'categoria') {
+        if (isCreating) {
+          await apiRequest(ENDPOINTS.categorias.create, {
+            method: 'POST',
+            body: JSON.stringify({ nombre, descripcion: nombre }),
+          });
+        } else if (categoriaSeleccionada) {
+          await apiRequest(
+            editOculto ? ENDPOINTS.categorias.delete(categoriaSeleccionada) : ENDPOINTS.categorias.update,
+            {
+              method: editOculto ? 'DELETE' : 'PUT',
+              body: editOculto ? undefined : JSON.stringify({ id: categoriaSeleccionada, nombre, descripcion: nombre }),
+            }
+          );
+        }
+      } else {
+        const puntaje = Number(editPuntaje);
+        if (!editPuntaje.trim() || !Number.isFinite(puntaje)) return;
+        if (isCreating && categoriaSeleccionada) {
+          await apiRequest(ENDPOINTS.categorias.createSubcategoria(categoriaSeleccionada), {
+            method: 'POST',
+            body: JSON.stringify({ nombre, puntaje }),
+          });
+        } else if (subcategoriaSeleccionada) {
+          await apiRequest(
+            editOculto
+              ? ENDPOINTS.categorias.deleteSubcategoria(subcategoriaSeleccionada.id)
+              : ENDPOINTS.categorias.updateSubcategoria,
+            {
+              method: editOculto ? 'DELETE' : 'PUT',
+              body: editOculto
+                ? undefined
+                : JSON.stringify({ id: subcategoriaSeleccionada.id, nombre, puntaje }),
+            }
+          );
+        }
+      }
+      await recargarMatrizPuntajes();
+      setModalOpen(false);
+    } catch (error) {
+      console.error('No se pudo guardar la categoría:', error);
+      alert('No se pudo guardar la categoría.');
+    }
+  };
+
+  const handleEliminar = async () => {
+    try {
+      if (modalType === 'categoria' && categoriaSeleccionada) {
+        await apiRequest(ENDPOINTS.categorias.delete(categoriaSeleccionada), { method: 'DELETE' });
+      } else if (subcategoriaSeleccionada) {
+        await apiRequest(ENDPOINTS.categorias.deleteSubcategoria(subcategoriaSeleccionada.id), { method: 'DELETE' });
+      }
+      await recargarMatrizPuntajes();
+      setModalOpen(false);
+    } catch (error) {
+      console.error('No se pudo eliminar la categoría:', error);
+      alert('No se pudo eliminar la categoría.');
+    }
   };
 
   const handleCloseModal = () => {
@@ -305,7 +361,7 @@ export default function GestionCategorias() {
                   </Alert>
                 ) : (
                   <Button
-                    onClick={() => console.log('Eliminar')}
+                    onClick={() => void handleEliminar()}
                     variant="outlined"
                     color="error"
                     startIcon={<DeleteIcon />}
@@ -322,7 +378,13 @@ export default function GestionCategorias() {
           <Button onClick={handleCloseModal} variant="outlined">
             Cancelar
           </Button>
-          <Button onClick={handleGuardar} variant="contained" sx={{ bgcolor: '#94b43c', color: '#002f6c', '&:hover': { bgcolor: '#7a9a30' } }}>
+          <Button
+            onClick={() => void handleGuardar()}
+            disabled={!editNombre.trim() || (modalType === 'subcategoria'
+              && (!editPuntaje.trim() || !Number.isFinite(Number(editPuntaje))))}
+            variant="contained"
+            sx={{ bgcolor: '#94b43c', color: '#002f6c', '&:hover': { bgcolor: '#7a9a30' } }}
+          >
             Guardar
           </Button>
         </DialogActions>
