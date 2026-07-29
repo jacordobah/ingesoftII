@@ -238,9 +238,18 @@ export default function GestionCategorias() {
                   Subcategorías
                 </Typography>
                 {subcategoriasFiltradas.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    No hay subcategorías para esta categoría
-                  </Typography>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      No hay subcategorías para esta categoría
+                    </Typography>
+                    <ListItemButton
+                      onClick={handleCrearSubcategoria}
+                      sx={{ justifyContent: 'center', py: 2, color: '#94b43c', fontWeight: 'bold' }}
+                    >
+                      <AddIcon sx={{ mr: 1 }} />
+                      Agregar Subcategoría
+                    </ListItemButton>
+                  </Box>
                 ) : (
                   <List sx={{ py: 0 }}>
                     {subcategoriasFiltradas.map((subcategoria) => (
