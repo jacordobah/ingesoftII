@@ -92,7 +92,7 @@ function RoleBasedRedirect() {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  switch (user.rol) {
+  switch (String(user.rol)) {
     case 'usuario':
       return <Navigate to="/usuario/nuevo" replace />;
     case 'tecnico':

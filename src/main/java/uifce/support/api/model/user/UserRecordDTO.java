@@ -12,5 +12,7 @@ public record UserRecordDTO(
         String email,
         @NotNull
         @JsonAlias("rol")
-        Role role) {
+        Role role,
+        @JsonAlias("password")
+        String password){
 }

@@ -42,6 +42,11 @@ public class User {
         this.name = userRecordDTO.name();
         this.email = userRecordDTO.email();
         this.role = userRecordDTO.role();
+        if (userRecordDTO.password() != null) {
+            this.password = userRecordDTO.password();
+        }else{
+            this.password = "OAUTH_USER";
+        }
         this.active = true;
         this.creationDate = LocalDateTime.now();
         this.updateDate = LocalDateTime.now();

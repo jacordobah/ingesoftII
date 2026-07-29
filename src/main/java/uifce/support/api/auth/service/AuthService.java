@@ -39,13 +39,13 @@ public class AuthService {
             if (!user.isActive()) {
                 throw new IllegalStateException("Usuario inactivo en el sistema");
             }
-       /*   System.out.println("-> Clave digitada en Insomnia: " + loginRequestDTO.password());
+            System.out.println("-> Clave digitada en Insomnia: " + loginRequestDTO.password());
             System.out.println("-> Hash guardado en tu MySQL: " + user.getPassword());
             System.out.println("--> generado por spring: " + passwordEncoder.encode(loginRequestDTO.password()));
             System.out.println("-> ¿Coinciden?: " + passwordEncoder.matches(loginRequestDTO.password(), user.getPassword()));
 
             // Validar contraseña
-        */
+        
             if (!passwordEncoder.matches(loginRequestDTO.password(), user.getPassword())) {
                 throw new IllegalArgumentException("Credenciales inválidas");
             }
