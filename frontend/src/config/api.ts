@@ -58,22 +58,15 @@ export async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
-  let csrfToken = document.cookie
-    .split('; ')
-    .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
-    ?.split('=')[1];
-
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !csrfToken) {
-    await fetch(ENDPOINTS.auth.csrf, { credentials: 'include' });
-    csrfToken = document.cookie
-      .split('; ')
-      .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
-      ?.split('=')[1];
+  let csrfToken: string | undefined;
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const response = await fetch(ENDPOINTS.auth.csrf, { credentials: 'include' });
+    csrfToken = ((await response.json()) as { token: string }).token;
   }
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(csrfToken ? { 'X-XSRF-TOKEN': decodeURIComponent(csrfToken) } : {}),
+    ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
     ...(options.headers as Record<string, string>),
   };
 
