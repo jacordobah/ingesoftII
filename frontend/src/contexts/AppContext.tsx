@@ -159,15 +159,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const [apiTickets, apiUsers] = await Promise.all([
         apiRequest<PageResponse<TicketBackendDTO>>(ENDPOINTS.tickets.getAll),
-        apiRequest<PageResponse<User>>(ENDPOINTS.usuarios.getAll),
+        apiRequest<PageResponse<Record<string, unknown>>>(ENDPOINTS.usuarios.getAll),
       ]);
+
       setTickets(apiTickets.content.map(normalizeTicket));
-      setUsers(apiUsers.content);
+
+      // 🕵️ TRADUCTOR DE CONTRATOS INTEGRADO:
+      // Tomamos el contenido que viene de tu UserResponseDTO (en español) y le creamos
+      // un espejo en inglés (.name y .role) al vuelo para que las tablas de React lo entiendan,
+      // MANTENIENDO también las llaves originales (.nombre y .rol) para no dañar el Sidebar.
+      const usuariosNormalizados = (apiUsers.content || []).map((u: any) => ({
+        ...u,
+        name: u.nombre || u.name, // Si el Front busca .name, aquí lo tiene
+        role: u.rol || u.role     // Si la tabla busca .role, aquí lo tiene
+      })) as User[];
+
+      setUsers(usuariosNormalizados);
+
     } catch (error) {
       console.error('No se pudo sincronizar con el backend:', error);
     }
-    // auditoria.* no tiene implementacion en el backend (AuditController esta
-    // vacio), asi que no se intenta la llamada: se deja en [] hasta que exista.
   }, []);
 
   // Carga la matriz de puntajes real: categorias -> subcategorias,
@@ -212,23 +223,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (window.location.pathname.includes('/login-success')) {
         const params = new URLSearchParams(window.location.search);
         const tokenDeGoogle = params.get('token');
-        const roleDeGoogle = params.get('role'); // Recibe tus minúsculas de la rama estable
+        const roleDeGoogle = params.get('rol'); // Recibe tus minúsculas de la rama estable
 
         if (tokenDeGoogle) {
-          // 1. Guardamos el token en la clave exacta que busca api.ts
           localStorage.setItem('token', tokenDeGoogle);
 
-          // 2. Creamos un objeto de usuario provisional con el rol correcto
+          // Extraemos el nombre y correo que ahora sí envía tu Backend en Spring Boot
+          const nameDeGoogle = params.get('name') || 'Usuario UNAL';
+          const emailDeGoogle = params.get('email') || '';
+
           const usuarioProvisional = {
             id: params.get('id') ? Number(params.get('id')) : 0,
             rol: roleDeGoogle ? roleDeGoogle.toLowerCase() : 'usuario',
-            email: '',
-            nombre: 'Usuario UNAL'
-          };
+            email: emailDeGoogle, // 🍏 Captura tu correo real (jacordobah@...)
+            nombre: nameDeGoogle  // 🍏 Captura tu nombre real (Jose Alberto...)
+          } as User;
+
           localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(usuarioProvisional));
           setUser(usuarioProvisional);
 
-          // 3. Forzamos una redirección nativa limpia para destruir los parámetros de la URL
           window.location.href = '/';
           return;
         }

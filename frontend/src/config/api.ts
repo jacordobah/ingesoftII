@@ -2,7 +2,6 @@
 // Backend real: Spring Boot, rutas bajo /api/v1.
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
-// Endpoints
 // NOTA: el backend Java ahora tiene AuthController implementado con login/JWT.
 export const ENDPOINTS = {
   auth: {
@@ -31,6 +30,7 @@ export const ENDPOINTS = {
     updateSubcategoria: `${API_URL}/categoria/subcategoria`,
     deleteSubcategoria: (id: number) => `${API_URL}/categoria/subcategoria/${id}`,
   },
+// Endpoints
   ubicaciones: {
     getAll: `${API_URL}/edificios`,
     getEdificioById: (id: number) => `${API_URL}/edificios/${id}`,

@@ -75,6 +75,7 @@ public class AuthService {
         }
 
         String tokenJWT = "jwt-simulado-unal-" + user.getId();
+        System.out.println("dastos usuario " + user.getId()+ user.getEmail());
         return new LoginResponseDTO(userResponseDTO,tokenJWT);
     }
 }

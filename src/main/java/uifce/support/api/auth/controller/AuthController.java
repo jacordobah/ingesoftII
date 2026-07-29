@@ -39,7 +39,11 @@ public class AuthController {
 
         LoginResponseDTO loginResponseDTO = authService.processGoogleSuccess(email);
 
-        response.sendRedirect("http://localhost:3000/login-success?token=" + loginResponseDTO.token() + "&id=" + loginResponseDTO.user().id()
-                + "&role=" + loginResponseDTO.user().role().toLowerCase());
+        response.sendRedirect("http://localhost:3000/login-success?token="
+                + loginResponseDTO.token() + "&id=" + loginResponseDTO.user().id()
+                + "&role=" + loginResponseDTO.user().role().toLowerCase()
+                + "&role=" + loginResponseDTO.user().role().toLowerCase()
+                + "&name=" + java.net.URLEncoder.encode(loginResponseDTO.user().name(), "UTF-8")
+                + "&email=" + loginResponseDTO.user().email());
     }
 }
