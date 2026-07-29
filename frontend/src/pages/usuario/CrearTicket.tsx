@@ -147,6 +147,9 @@ export default function CrearTicket() {
                   label="Categoría del Servicio"
                   onChange={(e) => handleChange('categoria', e.target.value)}
                 >
+                  {categorias.length === 0 && (
+                    <MenuItem disabled value="">No hay categorías disponibles</MenuItem>
+                  )}
                   {categorias.map((cat) => (
                     <MenuItem key={cat.id} value={String(cat.id)}>
                       {cat.nombre}
@@ -156,6 +159,11 @@ export default function CrearTicket() {
                 {errors.categoria && (
                   <Typography variant="caption" color="error" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                     {errors.categoria}
+                  </Typography>
+                )}
+                {categorias.length === 0 && (
+                  <Typography variant="caption" color="warning.main">
+                    Un administrador debe crear una categoría y al menos una subcategoría.
                   </Typography>
                 )}
               </FormControl>
@@ -168,6 +176,9 @@ export default function CrearTicket() {
                   label="¿Cuál es el problema principal?"
                   onChange={(e) => handleChange('subcategoria', e.target.value)}
                 >
+                  {formData.categoria && subcategoriasFiltradas.length === 0 && (
+                    <MenuItem disabled value="">Esta categoría no tiene subcategorías</MenuItem>
+                  )}
                   {subcategoriasFiltradas.map((sub) => (
                     <MenuItem key={sub.id} value={String(sub.id)}>
                       {sub.nombre}
@@ -177,6 +188,11 @@ export default function CrearTicket() {
                 {errors.subcategoria && (
                   <Typography variant="caption" color="error" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                     {errors.subcategoria}
+                  </Typography>
+                )}
+                {formData.categoria && subcategoriasFiltradas.length === 0 && (
+                  <Typography variant="caption" color="warning.main">
+                    Seleccione otra categoría o solicite al administrador crear una subcategoría.
                   </Typography>
                 )}
               </FormControl>
@@ -189,6 +205,9 @@ export default function CrearTicket() {
                   label="Edificio"
                   onChange={(e) => handleChange('edificio', e.target.value)}
                 >
+                  {edificios.length === 0 && (
+                    <MenuItem disabled value="">No hay edificios disponibles</MenuItem>
+                  )}
                   {edificios.map((edificio) => (
                     <MenuItem key={edificio.id} value={String(edificio.id)}>
                       {edificio.nombre}
@@ -198,6 +217,11 @@ export default function CrearTicket() {
                 {errors.edificio && (
                   <Typography variant="caption" color="error" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                     {errors.edificio}
+                  </Typography>
+                )}
+                {edificios.length === 0 && (
+                  <Typography variant="caption" color="warning.main">
+                    Un administrador debe crear un edificio y al menos una ubicación.
                   </Typography>
                 )}
               </FormControl>
@@ -210,6 +234,9 @@ export default function CrearTicket() {
                   label="Ubicación Específica"
                   onChange={(e) => handleChange('ubicacion', e.target.value)}
                 >
+                  {formData.edificio && ubicacionesFiltradas.length === 0 && (
+                    <MenuItem disabled value="">Este edificio no tiene ubicaciones</MenuItem>
+                  )}
                   {ubicacionesFiltradas.map((ub) => (
                     <MenuItem key={ub.id} value={String(ub.id)}>
                       {ub.nombre}
@@ -219,6 +246,11 @@ export default function CrearTicket() {
                 {errors.ubicacion && (
                   <Typography variant="caption" color="error" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                     {errors.ubicacion}
+                  </Typography>
+                )}
+                {formData.edificio && ubicacionesFiltradas.length === 0 && (
+                  <Typography variant="caption" color="warning.main">
+                    Seleccione otro edificio o solicite al administrador crear una ubicación.
                   </Typography>
                 )}
               </FormControl>

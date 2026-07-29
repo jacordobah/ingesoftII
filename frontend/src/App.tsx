@@ -58,14 +58,14 @@ function App() {
                   <Route index element={<RoleBasedRedirect />} />
 
                   {/* Rutas de usuario */}
-                  <Route element={<ProtectedRoute allowedRoles={['Usuario']}><Outlet /></ProtectedRoute>}>
+                  <Route element={<ProtectedRoute allowedRoles={['Usuario', 'Tecnico', 'Administrador']}><Outlet /></ProtectedRoute>}>
                     <Route path="usuario/nuevo" element={<CrearTicket />} />
                     <Route path="usuario/confirmacion" element={<ConfirmacionTicket />} />
                     <Route path="usuario/historial" element={<HistorialTickets />} />
                   </Route>
 
                   {/* Rutas de técnico */}
-                  <Route element={<ProtectedRoute allowedRoles={['Tecnico']}><Outlet /></ProtectedRoute>}>
+                  <Route element={<ProtectedRoute allowedRoles={['Tecnico', 'Administrador']}><Outlet /></ProtectedRoute>}>
                     <Route path="tecnico/cola" element={<ColaTickets />} />
                     <Route path="tecnico/asignaciones" element={<MisAsignaciones />} />
                   </Route>

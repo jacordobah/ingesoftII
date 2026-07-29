@@ -58,6 +58,7 @@ public class LocationService {
     @Transactional
     public BuildingResponseDetailDTO updateBuilding(@Valid BuildingUpdateDTO buildingUpdate) {
         Building building = entityValidator.findOrThrow(buildingRepository, buildingUpdate.id(), "building");
+        building.setBuildingNumber(buildingUpdate.buildingNumber());
         building.setName(buildingUpdate.name());
         building.setUpdateDate(LocalDateTime.now());
         buildingRepository.save(building);

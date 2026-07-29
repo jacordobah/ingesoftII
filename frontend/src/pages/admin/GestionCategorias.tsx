@@ -33,6 +33,7 @@ export default function GestionCategorias() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'categoria' | 'subcategoria'>('subcategoria');
   const [editNombre, setEditNombre] = useState('');
+  const [editDescripcion, setEditDescripcion] = useState('');
   const [editPuntaje, setEditPuntaje] = useState('');
   const [editOculto, setEditOculto] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -48,6 +49,7 @@ export default function GestionCategorias() {
     if (categoria) {
       setCategoriaSeleccionada(categoriaId);
       setEditNombre(categoria.nombre);
+      setEditDescripcion(categoria.descripcion || '');
       setEditOculto(categoria.oculto || false);
       setModalType('categoria');
       setIsCreating(false);
@@ -57,6 +59,7 @@ export default function GestionCategorias() {
 
   const handleCrearCategoria = () => {
     setEditNombre('');
+    setEditDescripcion('');
     setEditOculto(false);
     setModalType('categoria');
     setIsCreating(true);
@@ -98,17 +101,19 @@ export default function GestionCategorias() {
 
     try {
       if (modalType === 'categoria') {
+        const descripcion = editDescripcion.trim();
+        if (!descripcion) return;
         if (isCreating) {
           await apiRequest(ENDPOINTS.categorias.create, {
             method: 'POST',
-            body: JSON.stringify({ nombre, descripcion: nombre }),
+            body: JSON.stringify({ nombre, descripcion }),
           });
         } else if (categoriaSeleccionada) {
           await apiRequest(
             editOculto ? ENDPOINTS.categorias.delete(categoriaSeleccionada) : ENDPOINTS.categorias.update,
             {
               method: editOculto ? 'DELETE' : 'PUT',
-              body: editOculto ? undefined : JSON.stringify({ id: categoriaSeleccionada, nombre, descripcion: nombre }),
+              body: editOculto ? undefined : JSON.stringify({ id: categoriaSeleccionada, nombre, descripcion }),
             }
           );
         }
@@ -334,6 +339,18 @@ export default function GestionCategorias() {
               onChange={(e) => setEditNombre(e.target.value)}
               sx={{ mb: 2 }}
             />
+            {modalType === 'categoria' && (
+              <TextField
+                fullWidth
+                required
+                multiline
+                rows={3}
+                label="Descripción"
+                value={editDescripcion}
+                onChange={(e) => setEditDescripcion(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+            )}
             {modalType === 'subcategoria' && (
               <TextField
                 fullWidth
@@ -389,7 +406,8 @@ export default function GestionCategorias() {
           </Button>
           <Button
             onClick={() => void handleGuardar()}
-            disabled={!editNombre.trim() || (modalType === 'subcategoria'
+            disabled={!editNombre.trim() || (modalType === 'categoria' && !editDescripcion.trim())
+              || (modalType === 'subcategoria'
               && (!editPuntaje.trim() || !Number.isFinite(Number(editPuntaje))))}
             variant="contained"
             sx={{ bgcolor: '#94b43c', color: '#002f6c', '&:hover': { bgcolor: '#7a9a30' } }}

@@ -195,16 +195,22 @@ try {
         nombre = "$($script:Tag) prohibida"
         descripcion = "No debe crearse"
     } -Expected @(403) | Out-Null
-    Invoke-Api -Session $admin -Method PUT -Path "/api/v1/categoria" -Body @{
+    $updatedCategory = Invoke-Api -Session $admin -Method PUT -Path "/api/v1/categoria" -Body @{
         id = $script:CategoryId
         nombre = "$($script:Tag) categoria editada"
         descripcion = "Prueba automática editada"
-    } | Out-Null
+    }
+    if ($updatedCategory.Json.descripcion -notmatch "editada") { throw "La descripcion de la categoria no se actualizo" }
     Invoke-Api -Session $admin -Method PUT -Path "/api/v1/categoria/subcategoria" -Body @{
         id = $subcategoryId
         nombre = "$($script:Tag) subcategoria editada"
         puntaje = 11
     } | Out-Null
+
+    Invoke-Api -Session $admin -Method POST -Path "/api/v1/edificios" -Body @{
+        numero = 0
+        nombre = "$($script:Tag) edificio invalido"
+    } -Expected @(400) | Out-Null
 
     $building = Invoke-Api -Session $admin -Method POST -Path "/api/v1/edificios" -Body @{
         numero = [int]([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() % 1000000)
@@ -224,11 +230,13 @@ try {
     Invoke-Api -Session $admin -Method GET -Path "/api/v1/edificios/oficinas/$officeId" -Body $null | Out-Null
     Invoke-Api -Session $userSession -Method GET -Path "/api/v1/edificios" -Body $null | Out-Null
     Invoke-Api -Session $userSession -Method GET -Path "/api/v1/edificios/$($script:BuildingId)/oficinas" -Body $null | Out-Null
-    Invoke-Api -Session $admin -Method PUT -Path "/api/v1/edificios" -Body @{
+    $updatedBuildingNumber = [int]$building.Json.numero + 1
+    $updatedBuilding = Invoke-Api -Session $admin -Method PUT -Path "/api/v1/edificios" -Body @{
         id = $script:BuildingId
-        numero = $building.Json.numero
+        numero = $updatedBuildingNumber
         nombre = "$($script:Tag) edificio editado"
-    } | Out-Null
+    }
+    if ([int]$updatedBuilding.Json.numero -ne $updatedBuildingNumber) { throw "El numero del edificio no se actualizo" }
     Invoke-Api -Session $admin -Method PUT -Path "/api/v1/edificios/oficinas" -Body @{
         id = $officeId
         nombre = "$($script:Tag) oficina editada"

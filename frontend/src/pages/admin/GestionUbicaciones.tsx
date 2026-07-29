@@ -47,7 +47,7 @@ export default function GestionUbicaciones() {
     const edificio = edificios.find((ed) => ed.id === edificioId);
     setEdificioSeleccionado(edificioId);
     setEditNombre(edificio?.nombre || '');
-    setEditPuntaje('');
+    setEditPuntaje(edificio?.numero.toString() || '');
     setEditOculto(false);
     setModalType('edificio');
     setIsCreating(false);
@@ -95,17 +95,17 @@ export default function GestionUbicaciones() {
 
     try {
       if (modalType === 'edificio') {
+        const numero = Number(editPuntaje);
+        if (!editPuntaje.trim() || !Number.isInteger(numero) || numero <= 0) return;
         if (isCreating) {
-          const numero = Math.max(0, ...edificios.map((edificio) => edificio.numero)) + 1;
           await apiRequest(ENDPOINTS.ubicaciones.createEdificio, {
             method: 'POST',
             body: JSON.stringify({ numero, nombre }),
           });
         } else if (edificioSeleccionado) {
-          const edificio = edificios.find((item) => item.id === edificioSeleccionado);
           await apiRequest(ENDPOINTS.ubicaciones.updateEdificio, {
             method: 'PUT',
-            body: JSON.stringify({ id: edificioSeleccionado, numero: edificio?.numero ?? 0, nombre }),
+            body: JSON.stringify({ id: edificioSeleccionado, numero, nombre }),
           });
         }
       } else {
@@ -236,9 +236,18 @@ export default function GestionUbicaciones() {
                   Ubicaciones
                 </Typography>
                 {ubicacionesFiltradas.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    No hay ubicaciones para este edificio
-                  </Typography>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      No hay ubicaciones para este edificio
+                    </Typography>
+                    <ListItemButton
+                      onClick={handleCrearUbicacion}
+                      sx={{ justifyContent: 'center', py: 2, color: '#94b43c', fontWeight: 'bold' }}
+                    >
+                      <AddIcon sx={{ mr: 1 }} />
+                      Agregar Ubicación
+                    </ListItemButton>
+                  </Box>
                 ) : (
                   <List sx={{ py: 0 }}>
                     {ubicacionesFiltradas.map((ubicacion) => (
@@ -323,16 +332,18 @@ export default function GestionUbicaciones() {
               onChange={(e) => setEditNombre(e.target.value)}
               sx={{ mb: 2 }}
             />
-            {modalType === 'ubicacion' && (
-              <TextField
-                fullWidth
-                label="Puntaje"
-                type="number"
-                value={editPuntaje}
-                onChange={(e) => setEditPuntaje(e.target.value)}
-                sx={{ mb: 2 }}
-              />
-            )}
+            <TextField
+              fullWidth
+              required
+              label={modalType === 'edificio' ? 'Número del edificio' : 'Puntaje'}
+              type="number"
+              value={editPuntaje}
+              onChange={(e) => setEditPuntaje(e.target.value)}
+              slotProps={{
+                htmlInput: modalType === 'edificio' ? { min: 1, step: 1 } : {},
+              }}
+              sx={{ mb: 2 }}
+            />
             
             {!isCreating && modalType === 'ubicacion' && (
               <FormControlLabel
@@ -375,8 +386,10 @@ export default function GestionUbicaciones() {
           </Button>
           <Button
             onClick={() => void handleGuardar()}
-            disabled={!editNombre.trim() || (modalType === 'ubicacion'
-              && (!editPuntaje.trim() || !Number.isFinite(Number(editPuntaje))))}
+            disabled={!editNombre.trim() || !editPuntaje.trim()
+              || (modalType === 'edificio'
+                ? !Number.isInteger(Number(editPuntaje)) || Number(editPuntaje) <= 0
+                : !Number.isFinite(Number(editPuntaje)))}
             variant="contained"
             sx={{ bgcolor: '#94b43c', color: '#002f6c', '&:hover': { bgcolor: '#7a9a30' } }}
           >
