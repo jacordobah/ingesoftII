@@ -134,6 +134,35 @@ try {
     $me = Invoke-Api -Session $admin -Method GET -Path "/api/v1/usuarios/me" -Body $null
     if ($me.Json.rol -ne "Administrador") { throw "El usuario admin no tiene el rol esperado" }
 
+    $officialCategoryNames = @(
+        "Conceptos técnicos",
+        "Impresoras",
+        "PC y portátiles",
+        "Software",
+        "Telefonía",
+        "Video, proyectores o pantallas",
+        "Servidores"
+    )
+    $officialCategories = Invoke-Api -Session $admin -Method GET -Path "/api/v1/categoria" -Body $null
+    $officialSubcategoryCount = 0
+    foreach ($categoryName in $officialCategoryNames) {
+        $category = @($officialCategories.Json) | Where-Object { $_.nombre -eq $categoryName }
+        if (!$category) { throw "Falta la categoría oficial: $categoryName" }
+        $subcategories = Invoke-Api -Session $admin -Method GET -Path "/api/v1/categoria/$($category.id)/subcategorias" -Body $null
+        $officialSubcategoryCount += @($subcategories.Json).Count
+    }
+    if ($officialSubcategoryCount -lt 29) { throw "Faltan subcategorías oficiales" }
+
+    $officialBuildings = Invoke-Api -Session $admin -Method GET -Path "/api/v1/edificios" -Body $null
+    $officialOfficeCount = 0
+    foreach ($buildingNumber in @(311, 310, 238)) {
+        $building = @($officialBuildings.Json) | Where-Object { $_.numero -eq $buildingNumber }
+        if (!$building) { throw "Falta el edificio oficial: $buildingNumber" }
+        $offices = Invoke-Api -Session $admin -Method GET -Path "/api/v1/edificios/$($building.id)/oficinas" -Body $null
+        $officialOfficeCount += @($offices.Json).Count
+    }
+    if ($officialOfficeCount -lt 33) { throw "Faltan ubicaciones oficiales" }
+
     Invoke-Api -Session $admin -Method POST -Path "/api/v1/usuarios" -Body @{
         nombre = ""
         email = ""
