@@ -35,7 +35,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/login", "/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/login",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
+                                "/docs",
+                                "/docs/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
